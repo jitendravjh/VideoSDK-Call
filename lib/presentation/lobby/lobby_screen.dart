@@ -142,79 +142,88 @@ class _CodeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final ready = code.isNotEmpty;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 18, 12, 18),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    displayName == null
-                        ? 'YOUR CODE'
-                        : 'YOUR CODE  ·  $displayName',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      letterSpacing: 1.2,
-                    ),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 18, 12, 18),
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  displayName == null
+                      ? 'YOUR CODE'
+                      : 'YOUR CODE  ·  $displayName',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: scheme.onPrimaryContainer.withValues(alpha: 0.7),
+                    letterSpacing: 1.4,
+                    fontWeight: FontWeight.w600,
                   ),
-                  const SizedBox(height: 6),
-                  if (ready)
-                    Text(
-                      CallCode.format(code),
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 2,
+                ),
+                const SizedBox(height: 8),
+                if (ready)
+                  Text(
+                    CallCode.format(code),
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      color: scheme.onPrimaryContainer,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 3,
+                    ),
+                  )
+                else
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: scheme.onPrimaryContainer,
+                        ),
                       ),
-                    )
-                  else
-                    Row(
-                      children: [
-                        const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Assigning a code',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: scheme.onPrimaryContainer,
                         ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Assigning a code',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Share this code so anyone can call you.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                const SizedBox(height: 6),
+                Text(
+                  'Share this code so anyone can call you.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onPrimaryContainer.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
             ),
-            if (ready)
-              IconButton(
-                tooltip: 'Copy code',
-                icon: const Icon(Icons.copy_outlined),
-                onPressed: () {
-                  unawaited(
-                    Clipboard.setData(
-                      ClipboardData(text: CallCode.format(code)),
-                    ),
-                  );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Code copied')),
-                  );
-                },
-              ),
-          ],
-        ),
+          ),
+          if (ready)
+            IconButton(
+              tooltip: 'Copy code',
+              color: scheme.onPrimaryContainer,
+              icon: const Icon(Icons.copy_outlined),
+              onPressed: () {
+                unawaited(
+                  Clipboard.setData(
+                    ClipboardData(text: CallCode.format(code)),
+                  ),
+                );
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Code copied')),
+                );
+              },
+            ),
+        ],
       ),
     );
   }
