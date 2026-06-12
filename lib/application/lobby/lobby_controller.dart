@@ -12,8 +12,12 @@ part 'lobby_controller.g.dart';
 class LobbyController extends _$LobbyController {
   @override
   List<User> build() {
-    final self = ref.watch(sessionControllerProvider);
-    if (self == null) {
+    // Gate only on signed-in/out, not on identity. The local user id changes
+    // from the provisional empty value to the server-assigned code shortly
+    // after sign-in; rebuilding on that change would cancel this subscription
+    // and discard the one-shot presence snapshot. selfId is resolved lazily per
+    // message instead.
+    if (!ref.watch(signedInProvider)) {
       return const [];
     }
 
@@ -22,7 +26,7 @@ class LobbyController extends _$LobbyController {
       state = PresenceReducer.apply(
         current: state,
         message: message,
-        selfId: self.userId,
+        selfId: ref.read(sessionControllerProvider)?.userId ?? '',
       );
     });
     ref.onDispose(sub.cancel);

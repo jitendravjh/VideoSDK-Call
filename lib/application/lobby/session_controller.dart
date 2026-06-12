@@ -37,3 +37,9 @@ class SessionController extends _$SessionController {
     state = null;
   }
 }
+
+/// Whether a user is signed in. Watching this only rebuilds dependents when the
+/// signed-in state flips, not on every identity change (the user id transitions
+/// from a provisional empty value to the server-assigned code after sign-in).
+@riverpod
+bool signedIn(Ref ref) => ref.watch(sessionControllerProvider) != null;
