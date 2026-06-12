@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:meet_videosdk/application/call/chat_controller.dart';
 import 'package:meet_videosdk/application/lobby/lobby_controller.dart';
 import 'package:meet_videosdk/application/lobby/session_controller.dart';
 import 'package:meet_videosdk/core/logging.dart';
 import 'package:meet_videosdk/data/models/call_state.dart';
+import 'package:meet_videosdk/data/models/chat_message.dart';
 import 'package:meet_videosdk/data/models/ice_candidate_payload.dart';
 import 'package:meet_videosdk/data/models/signal_message.dart';
 import 'package:meet_videosdk/data/models/user.dart';
@@ -12,6 +14,7 @@ import 'package:meet_videosdk/data/signaling/signaling_transport.dart';
 import 'package:meet_videosdk/data/webrtc/webrtc_engine.dart';
 import 'package:meet_videosdk/data/webrtc/webrtc_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:uuid/uuid.dart';
 
 part 'call_controller.g.dart';
 
@@ -23,6 +26,8 @@ part 'call_controller.g.dart';
 @riverpod
 class CallController extends _$CallController {
   final AppLogger _log = AppLogger('CallController');
+
+  static const _uuid = Uuid();
 
   late final WebRtcEngine _engine = ref.read(webRtcEngineProvider);
   late final SignalingTransport _signaling = ref.read(signalingServiceProvider);
@@ -40,6 +45,7 @@ class CallController extends _$CallController {
     final self = _self;
     if (self == null || state is! Idle) return;
 
+    ref.read(chatControllerProvider.notifier).clear();
     state = CallState.outgoing(peer: peer);
     _bindEngine();
 
@@ -63,6 +69,7 @@ class CallController extends _$CallController {
     final current = state;
     if (self == null || current is! Incoming) return;
 
+    ref.read(chatControllerProvider.notifier).clear();
     final peer = current.peer;
     final offerSdp = current.offerSdp;
     state = CallState.connecting(peer: peer);
@@ -136,6 +143,20 @@ class CallController extends _$CallController {
 
   Future<void> setSpeakerphone({required bool enabled}) =>
       _engine.setSpeakerphone(enabled: enabled);
+
+  void sendChat(String text) {
+    final self = _self;
+    final trimmed = text.trim();
+    if (self == null || trimmed.isEmpty) return;
+    final message = ChatMessage(
+      id: _uuid.v4(),
+      senderId: self.userId,
+      text: trimmed,
+      sentAt: DateTime.now(),
+    );
+    _engine.sendChat(message);
+    ref.read(chatControllerProvider.notifier).add(message);
+  }
 
   void _onSignal(SignalMessage message) {
     switch (message) {
@@ -219,6 +240,8 @@ class CallController extends _$CallController {
       onLocalCandidate: _sendLocalCandidate,
       onConnected: _handleConnected,
       onFailed: _handleFailed,
+      onChatMessage: (message) =>
+          ref.read(chatControllerProvider.notifier).add(message),
     );
   }
 

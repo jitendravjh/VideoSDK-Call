@@ -9,6 +9,7 @@ import 'package:meet_videosdk/data/models/call_state.dart';
 import 'package:meet_videosdk/data/models/user.dart';
 import 'package:meet_videosdk/data/webrtc/webrtc_providers.dart';
 import 'package:meet_videosdk/presentation/call/call_controls.dart';
+import 'package:meet_videosdk/presentation/call/chat_sheet.dart';
 import 'package:meet_videosdk/presentation/common/user_avatar.dart';
 
 class CallScreen extends ConsumerStatefulWidget {
@@ -363,6 +364,15 @@ class _ConnectedView extends ConsumerWidget {
               ),
             ),
           ),
+        Positioned(
+          top: 8,
+          left: 8,
+          child: IconButton.filledTonal(
+            tooltip: 'Chat',
+            icon: const Icon(Icons.chat_bubble_outline),
+            onPressed: () => showChatSheet(context),
+          ),
+        ),
         Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
