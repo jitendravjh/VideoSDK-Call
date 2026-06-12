@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:meet_videosdk/core/constants.dart';
 import 'package:meet_videosdk/core/logging.dart';
 import 'package:meet_videosdk/data/models/chat_message.dart';
 import 'package:meet_videosdk/data/models/ice_candidate_payload.dart';
+import 'package:meet_videosdk/data/webrtc/data_channel_codec.dart';
 import 'package:meet_videosdk/data/webrtc/webrtc_engine.dart';
 
 /// Owns a single [RTCPeerConnection] and the media attached to it.
@@ -45,6 +45,8 @@ class WebRtcService implements WebRtcEngine {
   void Function()? _onDataChannelOpen;
   void Function(ChatMessage message)? _onChatMessage;
   void Function({required bool hasVideo})? _onRemoteMedia;
+  void Function({required bool cameraOn, required bool micOn})?
+  _onRemoteMediaState;
 
   @override
   void bind({
@@ -54,6 +56,8 @@ class WebRtcService implements WebRtcEngine {
     void Function()? onDataChannelOpen,
     void Function(ChatMessage message)? onChatMessage,
     void Function({required bool hasVideo})? onRemoteMedia,
+    void Function({required bool cameraOn, required bool micOn})?
+    onRemoteMediaState,
   }) {
     _onLocalCandidate = onLocalCandidate;
     _onConnected = onConnected;
@@ -61,6 +65,7 @@ class WebRtcService implements WebRtcEngine {
     _onDataChannelOpen = onDataChannelOpen;
     _onChatMessage = onChatMessage;
     _onRemoteMedia = onRemoteMedia;
+    _onRemoteMediaState = onRemoteMediaState;
   }
 
   @override
@@ -214,14 +219,24 @@ class WebRtcService implements WebRtcEngine {
 
   @override
   void sendChat(ChatMessage message) {
+    _sendOnChannel(DataChannelCodec.encodeChat(message), 'chat');
+  }
+
+  @override
+  void sendMediaState({required bool cameraOn, required bool micOn}) {
+    _sendOnChannel(
+      DataChannelCodec.encodeMediaState(cameraOn: cameraOn, micOn: micOn),
+      'media-state',
+    );
+  }
+
+  void _sendOnChannel(String payload, String label) {
     final channel = _dataChannel;
     if (channel == null) {
-      _log.warn('chat dropped, data channel not open');
+      _log.warn('$label dropped, data channel not open');
       return;
     }
-    unawaited(
-      channel.send(RTCDataChannelMessage(jsonEncode(message.toJson()))),
-    );
+    unawaited(channel.send(RTCDataChannelMessage(payload)));
   }
 
   @override
@@ -301,6 +316,7 @@ class WebRtcService implements WebRtcEngine {
     _onDataChannelOpen = null;
     _onChatMessage = null;
     _onRemoteMedia = null;
+    _onRemoteMediaState = null;
 
     if (_renderersInitialized) {
       await localRenderer.dispose();
@@ -318,11 +334,14 @@ class WebRtcService implements WebRtcEngine {
         }
       }
       ..onMessage = (message) {
-        try {
-          final json = jsonDecode(message.text) as Map<String, dynamic>;
-          _onChatMessage?.call(ChatMessage.fromJson(json));
-        } on Object catch (error) {
-          _log.warn('dropped malformed chat payload: $error');
+        final decoded = DataChannelCodec.decode(message.text);
+        switch (decoded) {
+          case ChatData(:final message):
+            _onChatMessage?.call(message);
+          case MediaStateData(:final cameraOn, :final micOn):
+            _onRemoteMediaState?.call(cameraOn: cameraOn, micOn: micOn);
+          case null:
+            _log.warn('dropped malformed data-channel payload');
         }
       };
   }

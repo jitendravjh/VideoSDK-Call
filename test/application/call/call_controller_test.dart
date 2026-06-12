@@ -184,9 +184,14 @@ class _FakeEngine implements WebRtcEngine {
     void Function()? onDataChannelOpen,
     void Function(ChatMessage message)? onChatMessage,
     void Function({required bool hasVideo})? onRemoteMedia,
+    void Function({required bool cameraOn, required bool micOn})?
+    onRemoteMediaState,
   }) {
     _onConnected = onConnected;
   }
+
+  @override
+  void sendMediaState({required bool cameraOn, required bool micOn}) {}
 
   @override
   bool get hasLocalMedia => hasLocalMediaValue;

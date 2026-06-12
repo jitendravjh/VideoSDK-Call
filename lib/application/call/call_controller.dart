@@ -33,6 +33,9 @@ class CallController extends _$CallController {
   late final WebRtcEngine _engine = ref.read(webRtcEngineProvider);
   late final SignalingTransport _signaling = ref.read(signalingServiceProvider);
 
+  bool _localMicOn = true;
+  bool _localCameraOn = false;
+
   @override
   CallState build() {
     final sub = _signaling.messages.listen(_onSignal);
@@ -46,8 +49,7 @@ class CallController extends _$CallController {
     final self = _self;
     if (self == null || self.userId.isEmpty || state is! Idle) return;
 
-    ref.read(chatControllerProvider.notifier).clear();
-    ref.read(remoteVideoProvider.notifier).update(hasVideo: false);
+    _resetMediaState(cameraOn: video);
     state = CallState.outgoing(peer: peer);
     _bindEngine();
 
@@ -71,8 +73,7 @@ class CallController extends _$CallController {
     final current = state;
     if (self == null || self.userId.isEmpty || current is! Incoming) return;
 
-    ref.read(chatControllerProvider.notifier).clear();
-    ref.read(remoteVideoProvider.notifier).update(hasVideo: false);
+    _resetMediaState(cameraOn: video);
     final peer = current.peer;
     final offerSdp = current.offerSdp;
     state = CallState.connecting(peer: peer);
@@ -139,16 +140,33 @@ class CallController extends _$CallController {
     }
   }
 
-  Future<void> setMicEnabled({required bool enabled}) =>
-      _engine.setMicEnabled(enabled: enabled);
+  Future<void> setMicEnabled({required bool enabled}) async {
+    _localMicOn = enabled;
+    await _engine.setMicEnabled(enabled: enabled);
+    _broadcastMediaState();
+  }
 
-  Future<void> setCameraEnabled({required bool enabled}) =>
-      _engine.setCameraEnabled(enabled: enabled);
+  Future<void> setCameraEnabled({required bool enabled}) async {
+    _localCameraOn = enabled;
+    await _engine.setCameraEnabled(enabled: enabled);
+    _broadcastMediaState();
+  }
 
   Future<void> switchCamera() => _engine.switchCamera();
 
   Future<void> setSpeakerphone({required bool enabled}) =>
       _engine.setSpeakerphone(enabled: enabled);
+
+  void _resetMediaState({required bool cameraOn}) {
+    _localMicOn = true;
+    _localCameraOn = cameraOn;
+    ref.read(chatControllerProvider.notifier).clear();
+    ref.read(remoteVideoProvider.notifier).update(hasVideo: false);
+    ref.read(remoteMicProvider.notifier).update(micOn: true);
+  }
+
+  void _broadcastMediaState() =>
+      _engine.sendMediaState(cameraOn: _localCameraOn, micOn: _localMicOn);
 
   void sendChat(String text) {
     final self = _self;
@@ -249,10 +267,15 @@ class CallController extends _$CallController {
       onLocalCandidate: _sendLocalCandidate,
       onConnected: _handleConnected,
       onFailed: _handleFailed,
+      onDataChannelOpen: _broadcastMediaState,
       onChatMessage: (message) =>
           ref.read(chatControllerProvider.notifier).add(message),
       onRemoteMedia: ({required hasVideo}) =>
           ref.read(remoteVideoProvider.notifier).update(hasVideo: hasVideo),
+      onRemoteMediaState: ({required cameraOn, required micOn}) {
+        ref.read(remoteVideoProvider.notifier).update(hasVideo: cameraOn);
+        ref.read(remoteMicProvider.notifier).update(micOn: micOn);
+      },
     );
   }
 

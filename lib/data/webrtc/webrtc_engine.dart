@@ -19,6 +19,8 @@ abstract class WebRtcEngine {
     void Function()? onDataChannelOpen,
     void Function(ChatMessage message)? onChatMessage,
     void Function({required bool hasVideo})? onRemoteMedia,
+    void Function({required bool cameraOn, required bool micOn})?
+    onRemoteMediaState,
   });
 
   Future<void> openLocalMedia({required bool audio, required bool video});
@@ -28,6 +30,7 @@ abstract class WebRtcEngine {
   Future<void> setRemoteDescription(String sdp, String type);
   Future<void> addRemoteCandidate(IceCandidatePayload candidate);
   void sendChat(ChatMessage message);
+  void sendMediaState({required bool cameraOn, required bool micOn});
   Future<void> setMicEnabled({required bool enabled});
   Future<void> setCameraEnabled({required bool enabled});
   Future<void> switchCamera();
