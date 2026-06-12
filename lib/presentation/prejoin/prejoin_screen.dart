@@ -19,7 +19,8 @@ class PrejoinScreen extends ConsumerStatefulWidget {
   ConsumerState<PrejoinScreen> createState() => _PrejoinScreenState();
 }
 
-class _PrejoinScreenState extends ConsumerState<PrejoinScreen> {
+class _PrejoinScreenState extends ConsumerState<PrejoinScreen>
+    with WidgetsBindingObserver {
   static const _permissions = MediaPermissions();
 
   bool _micOn = true;
@@ -30,13 +31,24 @@ class _PrejoinScreenState extends ConsumerState<PrejoinScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _setup());
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     unawaited(ref.read(callControllerProvider.notifier).cancelPreview());
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Re-check after the user may have granted permission in OS settings.
+    if (state == AppLifecycleState.resumed &&
+        _micPermission != MediaPermissionResult.granted) {
+      unawaited(_setup());
+    }
   }
 
   CallController get _call => ref.read(callControllerProvider.notifier);
