@@ -100,12 +100,10 @@ class LobbyScreen extends ConsumerWidget {
     WidgetRef ref,
     User? self,
   ) async {
-    final controller = TextEditingController();
     final code = await showDialog<String>(
       context: context,
-      builder: (context) => _JoinDialog(controller: controller),
+      builder: (context) => const _JoinDialog(),
     );
-    controller.dispose();
     if (code == null || !context.mounted) return;
 
     final normalized = CallCode.normalize(code);
@@ -229,17 +227,30 @@ class _CodeCard extends StatelessWidget {
   }
 }
 
-class _JoinDialog extends StatelessWidget {
-  const _JoinDialog({required this.controller});
+class _JoinDialog extends StatefulWidget {
+  const _JoinDialog();
 
-  final TextEditingController controller;
+  @override
+  State<_JoinDialog> createState() => _JoinDialogState();
+}
+
+class _JoinDialogState extends State<_JoinDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() => Navigator.of(context).pop(_controller.text);
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Join with a code'),
       content: TextField(
-        controller: controller,
+        controller: _controller,
         autofocus: true,
         textCapitalization: TextCapitalization.characters,
         textInputAction: TextInputAction.go,
@@ -247,7 +258,7 @@ class _JoinDialog extends StatelessWidget {
           hintText: 'Enter code (e.g. ABC-DEF)',
           prefixIcon: Icon(Icons.dialpad),
         ),
-        onSubmitted: (value) => Navigator.of(context).pop(value),
+        onSubmitted: (_) => _submit(),
       ),
       actions: [
         TextButton(
@@ -255,7 +266,7 @@ class _JoinDialog extends StatelessWidget {
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: () => Navigator.of(context).pop(controller.text),
+          onPressed: _submit,
           child: const Text('Connect'),
         ),
       ],
