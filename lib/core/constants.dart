@@ -2,15 +2,30 @@ import 'package:flutter/foundation.dart';
 
 /// Network and WebRTC configuration constants.
 ///
-/// The signalling server host is the single place to change when pointing the
-/// app at a different machine. Android emulators reach the host loopback via
-/// `10.0.2.2`; every other target uses `localhost`.
+/// The signalling server host can be overridden at build/run time, which is how
+/// a physical device points at the host machine on the LAN:
+///
+/// ```sh
+/// flutter run --dart-define=SIGNALING_HOST=192.168.1.50
+/// ```
+///
+/// With no override, the Android emulator reaches the host loopback via
+/// `10.0.2.2` and every other target uses `localhost`. A physical phone cannot
+/// use `10.0.2.2` (that alias only exists inside the emulator), so it needs the
+/// override set to the host machine's LAN IP.
 class AppConfig {
   const AppConfig._();
 
-  static const int signalingPort = 3000;
+  static const String _hostOverride = String.fromEnvironment('SIGNALING_HOST');
+  static const String _urlOverride = String.fromEnvironment('SIGNALING_URL');
+
+  static const int signalingPort =
+      int.fromEnvironment('SIGNALING_PORT', defaultValue: 3000);
 
   static String get signalingHost {
+    if (_hostOverride.isNotEmpty) {
+      return _hostOverride;
+    }
     if (kIsWeb) {
       return 'localhost';
     }
@@ -20,7 +35,12 @@ class AppConfig {
     };
   }
 
-  static String get signalingUrl => 'http://$signalingHost:$signalingPort';
+  static String get signalingUrl {
+    if (_urlOverride.isNotEmpty) {
+      return _urlOverride;
+    }
+    return 'http://$signalingHost:$signalingPort';
+  }
 
   static const List<Map<String, dynamic>> iceServers = [
     {'urls': 'stun:stun.l.google.com:19302'},
