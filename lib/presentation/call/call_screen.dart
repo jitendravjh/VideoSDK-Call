@@ -23,6 +23,7 @@ class CallScreen extends ConsumerStatefulWidget {
 class _CallScreenState extends ConsumerState<CallScreen> {
   bool _muted = false;
   bool _speakerOn = false;
+  bool _cameraOff = false;
   Timer? _ticker;
   Duration _elapsed = Duration.zero;
   bool _terminalHandled = false;
@@ -101,6 +102,15 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     );
   }
 
+  void _toggleCamera() {
+    setState(() => _cameraOff = !_cameraOff);
+    unawaited(
+      ref
+          .read(callControllerProvider.notifier)
+          .setCameraEnabled(enabled: !_cameraOff),
+    );
+  }
+
   void _handleBack(CallState state) {
     final notifier = ref.read(callControllerProvider.notifier);
     switch (state) {
@@ -165,8 +175,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         elapsed: _elapsed,
         muted: _muted,
         speakerOn: _speakerOn,
+        cameraOff: _cameraOff,
         onToggleMute: _toggleMute,
         onToggleSpeaker: _toggleSpeaker,
+        onToggleCamera: _toggleCamera,
         onEnd: () => ref.read(callControllerProvider.notifier).endCall(),
       ),
       Ended(:final reason) => _TerminalView(
@@ -297,8 +309,10 @@ class _ConnectedView extends ConsumerWidget {
     required this.elapsed,
     required this.muted,
     required this.speakerOn,
+    required this.cameraOff,
     required this.onToggleMute,
     required this.onToggleSpeaker,
+    required this.onToggleCamera,
     required this.onEnd,
   });
 
@@ -306,8 +320,10 @@ class _ConnectedView extends ConsumerWidget {
   final Duration elapsed;
   final bool muted;
   final bool speakerOn;
+  final bool cameraOff;
   final VoidCallback onToggleMute;
   final VoidCallback onToggleSpeaker;
+  final VoidCallback onToggleCamera;
   final VoidCallback onEnd;
 
   @override
@@ -390,9 +406,11 @@ class _ConnectedView extends ConsumerWidget {
             child: CallControls(
               muted: muted,
               speakerOn: speakerOn,
-              showCameraFlip: isVideo,
+              videoCall: isVideo,
+              cameraOff: cameraOff,
               onToggleMute: onToggleMute,
               onToggleSpeaker: onToggleSpeaker,
+              onToggleCamera: onToggleCamera,
               onFlipCamera: () =>
                   ref.read(callControllerProvider.notifier).switchCamera(),
               onEnd: onEnd,

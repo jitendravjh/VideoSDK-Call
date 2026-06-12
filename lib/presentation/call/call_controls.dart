@@ -4,9 +4,11 @@ class CallControls extends StatelessWidget {
   const CallControls({
     required this.muted,
     required this.speakerOn,
-    required this.showCameraFlip,
+    required this.videoCall,
+    required this.cameraOff,
     required this.onToggleMute,
     required this.onToggleSpeaker,
+    required this.onToggleCamera,
     required this.onFlipCamera,
     required this.onEnd,
     super.key,
@@ -14,9 +16,11 @@ class CallControls extends StatelessWidget {
 
   final bool muted;
   final bool speakerOn;
-  final bool showCameraFlip;
+  final bool videoCall;
+  final bool cameraOff;
   final VoidCallback onToggleMute;
   final VoidCallback onToggleSpeaker;
+  final VoidCallback onToggleCamera;
   final VoidCallback onFlipCamera;
   final VoidCallback onEnd;
 
@@ -45,7 +49,14 @@ class CallControls extends StatelessWidget {
             tooltip: speakerOn ? 'Speaker on' : 'Speaker off',
             onPressed: onToggleSpeaker,
           ),
-          if (showCameraFlip) ...[
+          if (videoCall) ...[
+            const SizedBox(width: 12),
+            _ControlButton(
+              icon: cameraOff ? Icons.videocam_off : Icons.videocam,
+              active: cameraOff,
+              tooltip: cameraOff ? 'Turn camera on' : 'Turn camera off',
+              onPressed: onToggleCamera,
+            ),
             const SizedBox(width: 12),
             _ControlButton(
               icon: Icons.cameraswitch,
