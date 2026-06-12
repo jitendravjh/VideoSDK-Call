@@ -78,16 +78,26 @@ checked in).
 
 ### Server host configuration
 
-The server address is a single constant in
-[`lib/core/constants.dart`](lib/core/constants.dart):
+The server address resolves in [`lib/core/constants.dart`](lib/core/constants.dart):
 
-| Target | Host used |
-|---|---|
-| Android emulator | `10.0.2.2` (host loopback) |
-| Web / desktop | `localhost` |
-| Physical device | set to your machine's LAN IP |
+| Target | Host used | Note |
+|---|---|---|
+| Android emulator | `10.0.2.2` | host loopback (emulator only) |
+| Web / desktop | `localhost` | |
+| Physical device | LAN IP / domain | pass it in (see below) |
 
-Change `AppConfig.signalingHost` for a physical device or a deployed server.
+A physical phone cannot use `10.0.2.2` (that alias exists only inside the
+emulator), so point it at the host machine's LAN IP with `--dart-define`:
+
+```sh
+# find your machine's Wi-Fi IP (macOS): ipconfig getifaddr en0
+flutter run --dart-define=SIGNALING_HOST=192.168.1.2
+```
+
+`SIGNALING_PORT` (default `3000`) and a full `SIGNALING_URL` (e.g.
+`https://your-host` for a deployed WSS server) can be overridden the same way.
+Both phones and the server must be on the same network, and the host firewall
+must allow the port.
 
 ### Two-client test setup
 
