@@ -9,6 +9,7 @@ import 'package:meet_videosdk/application/lobby/session_controller.dart';
 import 'package:meet_videosdk/core/call_code.dart';
 import 'package:meet_videosdk/data/models/user.dart';
 import 'package:meet_videosdk/presentation/common/app_router.dart';
+import 'package:meet_videosdk/presentation/common/brand_logo.dart';
 import 'package:meet_videosdk/presentation/common/connection_banner.dart';
 import 'package:meet_videosdk/presentation/common/connection_status_chip.dart';
 
@@ -22,7 +23,18 @@ class LobbyScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('VideoSDK Call'),
+        titleSpacing: 16,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const BrandLogo(size: 28),
+            const SizedBox(width: 10),
+            Text(
+              'VideoSDK Call',
+              style: Theme.of(context).appBarTheme.titleTextStyle,
+            ),
+          ],
+        ),
         actions: [
           const Padding(
             padding: EdgeInsets.only(right: 12),

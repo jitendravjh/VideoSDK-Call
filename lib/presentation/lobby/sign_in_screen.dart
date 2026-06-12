@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:meet_videosdk/application/lobby/session_controller.dart';
+import 'package:meet_videosdk/presentation/common/brand_logo.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
@@ -49,25 +50,24 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Icon(
-                    Icons.videocam_outlined,
-                    size: 56,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(height: 24),
+                  const Align(child: BrandLogo(size: 88)),
+                  const SizedBox(height: 28),
                   Text(
                     'VideoSDK Call',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.5,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Text(
-                    'Enter a display name to see who is online and start a call.',
+                    'Voice and video calls over WebRTC. Enter a name to see who '
+                    'is online or share your code.',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
+                      height: 1.4,
                     ),
                   ),
                   const SizedBox(height: 32),
