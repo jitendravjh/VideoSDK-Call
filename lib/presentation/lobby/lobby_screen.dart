@@ -257,6 +257,7 @@ class _UserTile extends StatelessWidget {
 
     return Card(
       child: ListTile(
+        onTap: onCall,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         leading: CircleAvatar(
           backgroundColor: theme.colorScheme.primaryContainer,
@@ -268,10 +269,10 @@ class _UserTile extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         subtitle: Text(CallCode.format(user.userId)),
-        trailing: FilledButton.tonalIcon(
+        trailing: IconButton.filledTonal(
           onPressed: onCall,
-          icon: const Icon(Icons.call, size: 18),
-          label: const Text('Call'),
+          icon: const Icon(Icons.call),
+          tooltip: 'Call ${user.displayName}',
         ),
       ),
     );

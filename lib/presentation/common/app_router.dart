@@ -1,7 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
+import 'package:meet_videosdk/application/call/call_controller.dart';
 import 'package:meet_videosdk/application/lobby/session_controller.dart';
+import 'package:meet_videosdk/data/models/call_state.dart';
 import 'package:meet_videosdk/data/models/user.dart';
+import 'package:meet_videosdk/presentation/call/call_screen.dart';
 import 'package:meet_videosdk/presentation/lobby/lobby_screen.dart';
 import 'package:meet_videosdk/presentation/lobby/sign_in_screen.dart';
 import 'package:meet_videosdk/presentation/prejoin/prejoin_screen.dart';
@@ -15,6 +18,7 @@ class AppRoutes {
   static const String signIn = '/';
   static const String lobby = '/lobby';
   static const String prejoin = '/prejoin';
+  static const String call = '/call';
 }
 
 @Riverpod(keepAlive: true)
@@ -22,6 +26,7 @@ GoRouter router(Ref ref) {
   final refresh = ValueNotifier(0);
   ref
     ..listen(sessionControllerProvider, (_, _) => refresh.value++)
+    ..listen(callControllerProvider, (_, _) => refresh.value++)
     ..onDispose(refresh.dispose);
 
   return GoRouter(
@@ -29,11 +34,18 @@ GoRouter router(Ref ref) {
     refreshListenable: refresh,
     redirect: (context, state) {
       final signedIn = ref.read(sessionControllerProvider) != null;
-      final atSignIn = state.matchedLocation == AppRoutes.signIn;
+      final location = state.matchedLocation;
       if (!signedIn) {
-        return atSignIn ? null : AppRoutes.signIn;
+        return location == AppRoutes.signIn ? null : AppRoutes.signIn;
       }
-      if (atSignIn) {
+
+      // A call (incoming, outgoing, or active) takes over the screen; an
+      // incoming call interrupts whatever route is showing.
+      final inCall = ref.read(callControllerProvider) is! Idle;
+      if (inCall) {
+        return location == AppRoutes.call ? null : AppRoutes.call;
+      }
+      if (location == AppRoutes.call || location == AppRoutes.signIn) {
         return AppRoutes.lobby;
       }
       return null;
@@ -50,6 +62,10 @@ GoRouter router(Ref ref) {
       GoRoute(
         path: AppRoutes.prejoin,
         builder: (context, state) => PrejoinScreen(peer: state.extra! as User),
+      ),
+      GoRoute(
+        path: AppRoutes.call,
+        builder: (context, state) => const CallScreen(),
       ),
     ],
   );

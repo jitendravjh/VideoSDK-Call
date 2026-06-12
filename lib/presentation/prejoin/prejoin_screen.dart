@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:meet_videosdk/application/call/call_controller.dart';
 import 'package:meet_videosdk/core/permissions.dart';
 import 'package:meet_videosdk/data/models/user.dart';
@@ -87,8 +86,9 @@ class _PrejoinScreenState extends ConsumerState<PrejoinScreen>
   }
 
   Future<void> _start() async {
+    // Starting the call moves the state out of Idle; the router redirect then
+    // replaces this screen with the call screen.
     await _call.startCall(widget.peer, video: _cameraOn);
-    if (mounted) context.pop();
   }
 
   @override
