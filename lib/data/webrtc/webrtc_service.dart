@@ -58,6 +58,9 @@ class WebRtcService implements WebRtcEngine {
   @override
   bool get hasVideo => _localStream?.getVideoTracks().isNotEmpty ?? false;
 
+  @override
+  bool get hasLocalMedia => _localStream != null;
+
   Future<void> _ensureRenderers() async {
     if (_renderersInitialized) return;
     await localRenderer.initialize();
@@ -71,6 +74,7 @@ class WebRtcService implements WebRtcEngine {
     required bool video,
   }) async {
     await _ensureRenderers();
+    await _releaseLocalStream();
     final constraints = <String, dynamic>{
       'audio': audio,
       'video': video
@@ -234,17 +238,22 @@ class WebRtcService implements WebRtcEngine {
         ..onDataChannel = null;
     }
 
-    for (final track in _localStream?.getTracks() ?? <MediaStreamTrack>[]) {
-      await track.stop();
-    }
-    await _localStream?.dispose();
-    _localStream = null;
-
-    localRenderer.srcObject = null;
+    await _releaseLocalStream();
     remoteRenderer.srcObject = null;
 
     await pc?.close();
     _pc = null;
+  }
+
+  Future<void> _releaseLocalStream() async {
+    final stream = _localStream;
+    if (stream == null) return;
+    for (final track in stream.getTracks()) {
+      await track.stop();
+    }
+    await stream.dispose();
+    _localStream = null;
+    localRenderer.srcObject = null;
   }
 
   @override

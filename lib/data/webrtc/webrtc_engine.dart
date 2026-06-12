@@ -10,6 +10,7 @@ abstract class WebRtcEngine {
   RTCVideoRenderer get localRenderer;
   RTCVideoRenderer get remoteRenderer;
   bool get hasVideo;
+  bool get hasLocalMedia;
 
   void bind({
     void Function(IceCandidatePayload candidate)? onLocalCandidate,

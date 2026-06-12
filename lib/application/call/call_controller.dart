@@ -27,8 +27,6 @@ class CallController extends _$CallController {
   late final WebRtcEngine _engine = ref.read(webRtcEngineProvider);
   late final SignalingTransport _signaling = ref.read(signalingServiceProvider);
 
-  bool _wantVideo = false;
-
   @override
   CallState build() {
     final sub = _signaling.messages.listen(_onSignal);
@@ -42,12 +40,13 @@ class CallController extends _$CallController {
     final self = _self;
     if (self == null || state is! Idle) return;
 
-    _wantVideo = video;
     state = CallState.outgoing(peer: peer);
     _bindEngine();
 
     try {
-      await _engine.openLocalMedia(audio: true, video: video);
+      if (!_engine.hasLocalMedia) {
+        await _engine.openLocalMedia(audio: true, video: video);
+      }
       await _engine.setupConnection(asCaller: true);
       final sdp = await _engine.createOffer();
       _signaling.send(
@@ -59,7 +58,7 @@ class CallController extends _$CallController {
     }
   }
 
-  Future<void> acceptCall() async {
+  Future<void> acceptCall({bool video = false}) async {
     final self = _self;
     final current = state;
     if (self == null || current is! Incoming) return;
@@ -70,7 +69,9 @@ class CallController extends _$CallController {
     _bindEngine();
 
     try {
-      await _engine.openLocalMedia(audio: true, video: _wantVideo);
+      if (!_engine.hasLocalMedia) {
+        await _engine.openLocalMedia(audio: true, video: video);
+      }
       await _engine.setupConnection(asCaller: false);
       await _engine.setRemoteDescription(offerSdp, 'offer');
       final answer = await _engine.createAnswer();
@@ -109,6 +110,19 @@ class CallController extends _$CallController {
   void reset() {
     if (state is Ended || state is Failed) {
       state = const CallState.idle();
+    }
+  }
+
+  /// Opens local media for the pre-join preview. Re-acquiring with a different
+  /// `video` flag swaps the track set so an audio-only call carries no video
+  /// track. The stream is reused by [startCall].
+  Future<void> openPreview({required bool video}) async {
+    await _engine.openLocalMedia(audio: true, video: video);
+  }
+
+  Future<void> cancelPreview() async {
+    if (state is Idle) {
+      await _engine.closeSession();
     }
   }
 

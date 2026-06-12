@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meet_videosdk/application/lobby/session_controller.dart';
+import 'package:meet_videosdk/data/models/user.dart';
 import 'package:meet_videosdk/presentation/lobby/lobby_screen.dart';
 import 'package:meet_videosdk/presentation/lobby/sign_in_screen.dart';
+import 'package:meet_videosdk/presentation/prejoin/prejoin_screen.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'app_router.g.dart';
@@ -12,6 +14,7 @@ class AppRoutes {
 
   static const String signIn = '/';
   static const String lobby = '/lobby';
+  static const String prejoin = '/prejoin';
 }
 
 @Riverpod(keepAlive: true)
@@ -43,6 +46,10 @@ GoRouter router(Ref ref) {
       GoRoute(
         path: AppRoutes.lobby,
         builder: (context, state) => const LobbyScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.prejoin,
+        builder: (context, state) => PrejoinScreen(peer: state.extra! as User),
       ),
     ],
   );

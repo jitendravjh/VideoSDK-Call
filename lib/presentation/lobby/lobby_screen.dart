@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:meet_videosdk/application/lobby/lobby_controller.dart';
 import 'package:meet_videosdk/application/lobby/session_controller.dart';
 import 'package:meet_videosdk/core/call_code.dart';
 import 'package:meet_videosdk/data/models/user.dart';
+import 'package:meet_videosdk/presentation/common/app_router.dart';
 import 'package:meet_videosdk/presentation/common/connection_status_chip.dart';
 
 class LobbyScreen extends ConsumerWidget {
@@ -59,7 +61,7 @@ class LobbyScreen extends ConsumerWidget {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: _UserTile(
                   user: user,
-                  onCall: () => _startCall(context, ref, user),
+                  onCall: () => _startCall(context, user),
                 ),
               ),
             ),
@@ -90,7 +92,7 @@ class LobbyScreen extends ConsumerWidget {
       return;
     }
     final peer = _resolvePeer(ref, normalized);
-    _startCall(context, ref, peer);
+    _startCall(context, peer);
   }
 
   User _resolvePeer(WidgetRef ref, String code) {
@@ -101,11 +103,8 @@ class LobbyScreen extends ConsumerWidget {
     );
   }
 
-  void _startCall(BuildContext context, WidgetRef ref, User peer) {
-    // Wired to the pre-join and call flow in a later step.
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Calling ${peer.displayName}...')),
-    );
+  void _startCall(BuildContext context, User peer) {
+    unawaited(context.push(AppRoutes.prejoin, extra: peer));
   }
 }
 
