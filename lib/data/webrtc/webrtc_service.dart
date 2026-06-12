@@ -31,6 +31,11 @@ class WebRtcService implements WebRtcEngine {
   RTCDataChannel? _dataChannel;
   bool _renderersInitialized = false;
 
+  // Bumped on every (re)acquire and on teardown so an in-flight getUserMedia
+  // that resolves after the session was closed discards its stream instead of
+  // leaking a live camera/mic into a torn-down session.
+  int _mediaGeneration = 0;
+
   final List<RTCIceCandidate> _pendingRemoteCandidates = [];
   bool _remoteDescriptionSet = false;
 
@@ -39,6 +44,7 @@ class WebRtcService implements WebRtcEngine {
   void Function()? _onFailed;
   void Function()? _onDataChannelOpen;
   void Function(ChatMessage message)? _onChatMessage;
+  void Function({required bool hasVideo})? _onRemoteMedia;
 
   @override
   void bind({
@@ -47,12 +53,14 @@ class WebRtcService implements WebRtcEngine {
     void Function()? onFailed,
     void Function()? onDataChannelOpen,
     void Function(ChatMessage message)? onChatMessage,
+    void Function({required bool hasVideo})? onRemoteMedia,
   }) {
     _onLocalCandidate = onLocalCandidate;
     _onConnected = onConnected;
     _onFailed = onFailed;
     _onDataChannelOpen = onDataChannelOpen;
     _onChatMessage = onChatMessage;
+    _onRemoteMedia = onRemoteMedia;
   }
 
   @override
@@ -75,6 +83,7 @@ class WebRtcService implements WebRtcEngine {
   }) async {
     await _ensureRenderers();
     await _releaseLocalStream();
+    final generation = ++_mediaGeneration;
     final constraints = <String, dynamic>{
       'audio': audio,
       'video': video
@@ -85,12 +94,26 @@ class WebRtcService implements WebRtcEngine {
           : false,
     };
     final stream = await navigator.mediaDevices.getUserMedia(constraints);
+    // The session was closed (or media re-acquired) while getUserMedia was in
+    // flight: drop this stream so it cannot leak a live camera/mic.
+    if (generation != _mediaGeneration) {
+      for (final track in stream.getTracks()) {
+        await track.stop();
+      }
+      await stream.dispose();
+      return;
+    }
     _localStream = stream;
     localRenderer.srcObject = stream;
   }
 
   @override
   Future<void> setupConnection({required bool asCaller}) async {
+    // Start each call with a clean candidate buffer so a reused engine never
+    // drains a previous (e.g. declined) session's queued candidates.
+    _pendingRemoteCandidates.clear();
+    _remoteDescriptionSet = false;
+
     final pc = await createPeerConnection({
       'iceServers': AppConfig.iceServers,
       'sdpSemantics': 'unified-plan',
@@ -110,7 +133,11 @@ class WebRtcService implements WebRtcEngine {
       }
       ..onTrack = (event) {
         if (event.streams.isNotEmpty) {
-          remoteRenderer.srcObject = event.streams.first;
+          final stream = event.streams.first;
+          remoteRenderer.srcObject = stream;
+          _onRemoteMedia?.call(
+            hasVideo: stream.getVideoTracks().isNotEmpty,
+          );
         }
       }
       ..onConnectionState = (state) {
@@ -227,6 +254,8 @@ class WebRtcService implements WebRtcEngine {
   /// renderers and callbacks so the service can be reused for the next call.
   @override
   Future<void> closeSession() async {
+    // Invalidate any in-flight getUserMedia so it discards its stream.
+    _mediaGeneration++;
     _pendingRemoteCandidates.clear();
     _remoteDescriptionSet = false;
 
@@ -269,6 +298,7 @@ class WebRtcService implements WebRtcEngine {
     _onFailed = null;
     _onDataChannelOpen = null;
     _onChatMessage = null;
+    _onRemoteMedia = null;
 
     if (_renderersInitialized) {
       await localRenderer.dispose();

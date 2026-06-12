@@ -49,7 +49,9 @@ class LobbyScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 FilledButton.icon(
-                  onPressed: () => _showJoinDialog(context, ref, self),
+                  onPressed: (self != null && self.userId.isNotEmpty)
+                      ? () => _showJoinDialog(context, ref, self)
+                      : null,
                   icon: const Icon(Icons.dialpad),
                   label: const Text('Join with a code'),
                 ),

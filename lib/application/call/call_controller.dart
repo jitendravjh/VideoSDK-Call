@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:meet_videosdk/application/call/chat_controller.dart';
+import 'package:meet_videosdk/application/call/remote_media_controller.dart';
 import 'package:meet_videosdk/application/lobby/lobby_controller.dart';
 import 'package:meet_videosdk/application/lobby/session_controller.dart';
 import 'package:meet_videosdk/core/logging.dart';
@@ -43,9 +44,10 @@ class CallController extends _$CallController {
 
   Future<void> startCall(User peer, {bool video = false}) async {
     final self = _self;
-    if (self == null || state is! Idle) return;
+    if (self == null || self.userId.isEmpty || state is! Idle) return;
 
     ref.read(chatControllerProvider.notifier).clear();
+    ref.read(remoteVideoProvider.notifier).update(hasVideo: false);
     state = CallState.outgoing(peer: peer);
     _bindEngine();
 
@@ -67,9 +69,10 @@ class CallController extends _$CallController {
   Future<void> acceptCall({bool video = false}) async {
     final self = _self;
     final current = state;
-    if (self == null || current is! Incoming) return;
+    if (self == null || self.userId.isEmpty || current is! Incoming) return;
 
     ref.read(chatControllerProvider.notifier).clear();
+    ref.read(remoteVideoProvider.notifier).update(hasVideo: false);
     final peer = current.peer;
     final offerSdp = current.offerSdp;
     state = CallState.connecting(peer: peer);
@@ -91,15 +94,18 @@ class CallController extends _$CallController {
     }
   }
 
-  void declineCall() {
+  Future<void> declineCall() async {
     final self = _self;
     final current = state;
-    if (self == null || current is! Incoming) return;
+    if (self == null || self.userId.isEmpty || current is! Incoming) return;
 
     _signaling.send(
       SignalMessage.decline(from: self.userId, to: current.peer.userId),
     );
     state = const CallState.idle();
+    // Clear any ICE the ringing caller trickled so it cannot leak into the
+    // next call's peer connection.
+    await _teardown();
   }
 
   Future<void> endCall() async {
@@ -147,7 +153,7 @@ class CallController extends _$CallController {
   void sendChat(String text) {
     final self = _self;
     final trimmed = text.trim();
-    if (self == null || trimmed.isEmpty) return;
+    if (self == null || self.userId.isEmpty || trimmed.isEmpty) return;
     final message = ChatMessage(
       id: _uuid.v4(),
       senderId: self.userId,
@@ -166,8 +172,11 @@ class CallController extends _$CallController {
         unawaited(_onAnswer(sdp));
       case DeclineMessage():
         _onDeclined();
-      case IceCandidateMessage(:final candidate):
-        unawaited(_engine.addRemoteCandidate(candidate));
+      case IceCandidateMessage(:final from, :final candidate):
+        // Only accept candidates from the peer of the current call.
+        if (from == state.peer?.userId) {
+          unawaited(_engine.addRemoteCandidate(candidate));
+        }
       case CallEndMessage(:final reason):
         _onRemoteEnd(reason);
       case PresenceMessage() ||
@@ -225,7 +234,7 @@ class CallController extends _$CallController {
   void _sendLocalCandidate(IceCandidatePayload candidate) {
     final self = _self;
     final peer = state.peer;
-    if (self == null || peer == null) return;
+    if (self == null || self.userId.isEmpty || peer == null) return;
     _signaling.send(
       SignalMessage.iceCandidate(
         from: self.userId,
@@ -242,6 +251,8 @@ class CallController extends _$CallController {
       onFailed: _handleFailed,
       onChatMessage: (message) =>
           ref.read(chatControllerProvider.notifier).add(message),
+      onRemoteMedia: ({required hasVideo}) =>
+          ref.read(remoteVideoProvider.notifier).update(hasVideo: hasVideo),
     );
   }
 
@@ -262,6 +273,7 @@ class CallController extends _$CallController {
 
   String _reasonLabel(String? reason) => switch (reason) {
     'offline' => 'User is offline',
+    'busy' => 'User is busy',
     'peer-left' => 'Peer left the call',
     _ => 'Call ended',
   };

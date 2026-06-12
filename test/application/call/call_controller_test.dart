@@ -94,7 +94,7 @@ void main() {
     expect(incoming, isA<Incoming>());
     expect((incoming as Incoming).peer.userId, 'BOBBB2');
 
-    notifier().declineCall();
+    await notifier().declineCall();
     expect(read(), isA<Idle>());
     expect(signaling.sent.whereType<DeclineMessage>(), hasLength(1));
   });
@@ -183,6 +183,7 @@ class _FakeEngine implements WebRtcEngine {
     void Function()? onFailed,
     void Function()? onDataChannelOpen,
     void Function(ChatMessage message)? onChatMessage,
+    void Function({required bool hasVideo})? onRemoteMedia,
   }) {
     _onConnected = onConnected;
   }

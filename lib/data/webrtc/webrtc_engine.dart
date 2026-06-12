@@ -18,6 +18,7 @@ abstract class WebRtcEngine {
     void Function()? onFailed,
     void Function()? onDataChannelOpen,
     void Function(ChatMessage message)? onChatMessage,
+    void Function({required bool hasVideo})? onRemoteMedia,
   });
 
   Future<void> openLocalMedia({required bool audio, required bool video});

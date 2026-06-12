@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:meet_videosdk/application/call/call_controller.dart';
+import 'package:meet_videosdk/application/call/remote_media_controller.dart';
 import 'package:meet_videosdk/core/permissions.dart';
 import 'package:meet_videosdk/data/models/call_state.dart';
 import 'package:meet_videosdk/data/models/user.dart';
 import 'package:meet_videosdk/data/webrtc/webrtc_providers.dart';
 import 'package:meet_videosdk/presentation/call/call_controls.dart';
 import 'package:meet_videosdk/presentation/call/chat_sheet.dart';
+import 'package:meet_videosdk/presentation/call/mic_level_bar.dart';
 import 'package:meet_videosdk/presentation/common/connection_banner.dart';
 import 'package:meet_videosdk/presentation/common/user_avatar.dart';
 
@@ -80,7 +82,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Microphone permission is required')),
       );
-      notifier.declineCall();
+      unawaited(notifier.declineCall());
       return;
     }
     await notifier.acceptCall(video: video);
@@ -115,7 +117,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     final notifier = ref.read(callControllerProvider.notifier);
     switch (state) {
       case Incoming():
-        notifier.declineCall();
+        unawaited(notifier.declineCall());
       case Outgoing() || Connecting() || Connected():
         unawaited(notifier.endCall());
       case Ended() || Failed() || Idle():
@@ -330,12 +332,13 @@ class _ConnectedView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final engine = ref.watch(webRtcEngineProvider);
-    final isVideo = engine.hasVideo;
+    final localHasVideo = engine.hasVideo;
+    final remoteHasVideo = ref.watch(remoteVideoProvider);
 
     return Stack(
       fit: StackFit.expand,
       children: [
-        if (isVideo)
+        if (remoteHasVideo)
           RTCVideoView(
             engine.remoteRenderer,
             objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
@@ -357,25 +360,30 @@ class _ConnectedView extends ConsumerWidget {
           right: 0,
           child: Column(
             children: [
-              if (isVideo)
+              if (remoteHasVideo)
                 Text(
                   peer.displayName,
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: isVideo ? Colors.white : null,
+                    color: Colors.white,
                   ),
                 ),
               Text(
                 _formatDuration(elapsed),
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: isVideo
+                  color: remoteHasVideo
                       ? Colors.white70
                       : theme.colorScheme.onSurfaceVariant,
                 ),
               ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: 180,
+                child: MicLevelBar(onLight: !remoteHasVideo),
+              ),
             ],
           ),
         ),
-        if (isVideo)
+        if (localHasVideo)
           Positioned(
             top: 12,
             right: 12,
@@ -406,7 +414,7 @@ class _ConnectedView extends ConsumerWidget {
             child: CallControls(
               muted: muted,
               speakerOn: speakerOn,
-              videoCall: isVideo,
+              videoCall: localHasVideo,
               cameraOff: cameraOff,
               onToggleMute: onToggleMute,
               onToggleSpeaker: onToggleSpeaker,
