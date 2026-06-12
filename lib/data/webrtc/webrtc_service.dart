@@ -133,11 +133,13 @@ class WebRtcService implements WebRtcEngine {
       }
       ..onTrack = (event) {
         if (event.streams.isNotEmpty) {
-          final stream = event.streams.first;
-          remoteRenderer.srcObject = stream;
-          _onRemoteMedia?.call(
-            hasVideo: stream.getVideoTracks().isNotEmpty,
-          );
+          remoteRenderer.srcObject = event.streams.first;
+        }
+        // Flag remote video off the track kind: reliable regardless of the
+        // per-track arrival order, and reported even if it lands before the
+        // connected view is listening.
+        if (event.track.kind == 'video') {
+          _onRemoteMedia?.call(hasVideo: true);
         }
       }
       ..onConnectionState = (state) {
