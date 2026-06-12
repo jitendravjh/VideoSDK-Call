@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:meet_videosdk/data/signaling/signaling_providers.dart';
-import 'package:meet_videosdk/data/signaling/signaling_service.dart';
+import 'package:meet_videosdk/data/signaling/signaling_transport.dart';
 
 /// Compact live indicator of the signalling socket connection state.
 class ConnectionStatusChip extends ConsumerWidget {

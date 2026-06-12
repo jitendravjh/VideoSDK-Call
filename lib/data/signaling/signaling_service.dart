@@ -6,21 +6,15 @@ import 'package:meet_videosdk/data/models/signal_message.dart';
 import 'package:meet_videosdk/data/models/user.dart';
 import 'package:meet_videosdk/data/signaling/signal_codec.dart';
 import 'package:meet_videosdk/data/signaling/signal_events.dart';
+import 'package:meet_videosdk/data/signaling/signaling_transport.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
-
-enum SignalingConnectionState {
-  disconnected,
-  connecting,
-  connected,
-  reconnecting,
-}
 
 /// Wraps the Socket.IO transport. Owns the socket, decodes inbound events into
 /// [SignalMessage]s, and re-registers the local user on every (re)connection.
 ///
 /// This is the only place the rest of the app touches the socket. It exposes
 /// broadcast streams; it never shows UI or navigates.
-class SignalingService {
+class SignalingService implements SignalingTransport {
   SignalingService();
 
   final SignalCodec _codec = const SignalCodec();
@@ -36,11 +30,14 @@ class SignalingService {
 
   SignalingConnectionState _state = SignalingConnectionState.disconnected;
 
+  @override
   Stream<SignalMessage> get messages => _messages.stream;
+  @override
   Stream<SignalingConnectionState> get connectionState => _connection.stream;
+  @override
   SignalingConnectionState get currentState => _state;
-  User? get self => _self;
 
+  @override
   void connect(User self) {
     _self = self;
     if (_socket != null) {
@@ -81,6 +78,7 @@ class SignalingService {
     socket.connect();
   }
 
+  @override
   void send(SignalMessage message) {
     final socket = _socket;
     if (socket == null) {
@@ -91,6 +89,7 @@ class SignalingService {
     socket.emit(encoded.event, encoded.payload);
   }
 
+  @override
   void disconnect() {
     _self = null;
     _socket
