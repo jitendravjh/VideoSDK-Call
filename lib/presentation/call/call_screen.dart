@@ -334,97 +334,146 @@ class _ConnectedView extends ConsumerWidget {
     final engine = ref.watch(webRtcEngineProvider);
     final localHasVideo = engine.hasVideo;
     final remoteHasVideo = ref.watch(remoteVideoProvider);
+    final remoteMicOn = ref.watch(remoteMicProvider);
+    final onVideoBg = remoteHasVideo;
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        if (remoteHasVideo)
-          RTCVideoView(
-            engine.remoteRenderer,
-            objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-          )
-        else
-          Center(
+    return ColoredBox(
+      color: remoteHasVideo ? Colors.black : theme.colorScheme.surface,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (remoteHasVideo)
+            RTCVideoView(engine.remoteRenderer)
+          else
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  UserAvatar(name: peer.displayName, radius: 56),
+                  const SizedBox(height: 20),
+                  Text(peer.displayName, style: theme.textTheme.headlineSmall),
+                  if (!remoteMicOn) ...[
+                    const SizedBox(height: 10),
+                    const _MutedChip(onVideoBg: false),
+                  ],
+                ],
+              ),
+            ),
+          Positioned(
+            top: 16,
+            left: 0,
+            right: 0,
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                UserAvatar(name: peer.displayName, radius: 56),
-                const SizedBox(height: 20),
-                Text(peer.displayName, style: theme.textTheme.headlineSmall),
+                if (remoteHasVideo)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        peer.displayName,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: Colors.white,
+                        ),
+                      ),
+                      if (!remoteMicOn) ...[
+                        const SizedBox(width: 8),
+                        const Icon(
+                          Icons.mic_off,
+                          size: 18,
+                          color: Colors.white,
+                        ),
+                      ],
+                    ],
+                  ),
+                Text(
+                  _formatDuration(elapsed),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: onVideoBg
+                        ? Colors.white70
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: 180,
+                  child: MicLevelBar(onLight: !onVideoBg),
+                ),
               ],
             ),
           ),
-        Positioned(
-          top: 16,
-          left: 0,
-          right: 0,
-          child: Column(
-            children: [
-              if (remoteHasVideo)
-                Text(
-                  peer.displayName,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
-                  ),
-                ),
-              Text(
-                _formatDuration(elapsed),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: remoteHasVideo
-                      ? Colors.white70
-                      : theme.colorScheme.onSurfaceVariant,
-                ),
+          if (localHasVideo)
+            Positioned(
+              top: 12,
+              right: 12,
+              width: 96,
+              height: 140,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: cameraOff
+                    ? const ColoredBox(
+                        color: Colors.black54,
+                        child: Center(
+                          child: Icon(
+                            Icons.videocam_off,
+                            color: Colors.white70,
+                          ),
+                        ),
+                      )
+                    : RTCVideoView(
+                        engine.localRenderer,
+                        mirror: true,
+                        objectFit:
+                            RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                      ),
               ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: 180,
-                child: MicLevelBar(onLight: !remoteHasVideo),
-              ),
-            ],
-          ),
-        ),
-        if (localHasVideo)
+            ),
           Positioned(
-            top: 12,
-            right: 12,
-            width: 96,
-            height: 140,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: RTCVideoView(
-                engine.localRenderer,
-                mirror: true,
-                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+            top: 8,
+            left: 8,
+            child: IconButton.filledTonal(
+              tooltip: 'Chat',
+              icon: const Icon(Icons.chat_bubble_outline),
+              onPressed: () => showChatSheet(context),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 28),
+              child: CallControls(
+                muted: muted,
+                speakerOn: speakerOn,
+                videoCall: localHasVideo,
+                cameraOff: cameraOff,
+                onToggleMute: onToggleMute,
+                onToggleSpeaker: onToggleSpeaker,
+                onToggleCamera: onToggleCamera,
+                onFlipCamera: () =>
+                    ref.read(callControllerProvider.notifier).switchCamera(),
+                onEnd: onEnd,
               ),
             ),
           ),
-        Positioned(
-          top: 8,
-          left: 8,
-          child: IconButton.filledTonal(
-            tooltip: 'Chat',
-            icon: const Icon(Icons.chat_bubble_outline),
-            onPressed: () => showChatSheet(context),
-          ),
-        ),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 28),
-            child: CallControls(
-              muted: muted,
-              speakerOn: speakerOn,
-              videoCall: localHasVideo,
-              cameraOff: cameraOff,
-              onToggleMute: onToggleMute,
-              onToggleSpeaker: onToggleSpeaker,
-              onToggleCamera: onToggleCamera,
-              onFlipCamera: () =>
-                  ref.read(callControllerProvider.notifier).switchCamera(),
-              onEnd: onEnd,
-            ),
-          ),
-        ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MutedChip extends StatelessWidget {
+  const _MutedChip({required this.onVideoBg});
+
+  final bool onVideoBg;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = onVideoBg ? Colors.white70 : Theme.of(context).hintColor;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.mic_off, size: 16, color: color),
+        const SizedBox(width: 6),
+        Text('Muted', style: TextStyle(color: color)),
       ],
     );
   }
