@@ -190,19 +190,23 @@ class WebRtcService implements WebRtcEngine {
       _log.warn('chat dropped, data channel not open');
       return;
     }
-    unawaited(channel.send(RTCDataChannelMessage(jsonEncode(message.toJson()))));
+    unawaited(
+      channel.send(RTCDataChannelMessage(jsonEncode(message.toJson()))),
+    );
   }
 
   @override
   Future<void> setMicEnabled({required bool enabled}) async {
-    for (final track in _localStream?.getAudioTracks() ?? <MediaStreamTrack>[]) {
+    for (final track
+        in _localStream?.getAudioTracks() ?? <MediaStreamTrack>[]) {
       track.enabled = enabled;
     }
   }
 
   @override
   Future<void> setCameraEnabled({required bool enabled}) async {
-    for (final track in _localStream?.getVideoTracks() ?? <MediaStreamTrack>[]) {
+    for (final track
+        in _localStream?.getVideoTracks() ?? <MediaStreamTrack>[]) {
       track.enabled = enabled;
     }
   }

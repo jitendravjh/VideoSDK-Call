@@ -143,8 +143,9 @@ class _Bubble extends StatelessWidget {
     final color = isMine
         ? theme.colorScheme.primary
         : theme.colorScheme.surfaceContainerHighest;
-    final textColor =
-        isMine ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface;
+    final textColor = isMine
+        ? theme.colorScheme.onPrimary
+        : theme.colorScheme.onSurface;
 
     return Align(
       alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,

@@ -9,7 +9,8 @@ class ConnectionStatusChip extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(connectionStateProvider).value ??
+    final state =
+        ref.watch(connectionStateProvider).value ??
         SignalingConnectionState.connecting;
     final theme = Theme.of(context);
 

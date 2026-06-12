@@ -10,6 +10,7 @@ import 'package:meet_videosdk/data/models/user.dart';
 import 'package:meet_videosdk/data/webrtc/webrtc_providers.dart';
 import 'package:meet_videosdk/presentation/call/call_controls.dart';
 import 'package:meet_videosdk/presentation/call/chat_sheet.dart';
+import 'package:meet_videosdk/presentation/common/connection_banner.dart';
 import 'package:meet_videosdk/presentation/common/user_avatar.dart';
 
 class CallScreen extends ConsumerStatefulWidget {
@@ -125,50 +126,59 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
         body: SafeArea(
-          child: switch (state) {
-            Incoming(:final peer) => _IncomingView(
-                peer: peer,
-                onAccept: _accept,
-                onDecline: () =>
-                    ref.read(callControllerProvider.notifier).declineCall(),
+          child: Stack(
+            children: [
+              Positioned.fill(child: _phase(state)),
+              const Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: ConnectionBanner(),
               ),
-            Outgoing(:final peer) => _PendingView(
-                peer: peer,
-                label: 'Calling',
-                onCancel: () =>
-                    ref.read(callControllerProvider.notifier).endCall(),
-              ),
-            Connecting(:final peer) => _PendingView(
-                peer: peer,
-                label: 'Connecting',
-                onCancel: () =>
-                    ref.read(callControllerProvider.notifier).endCall(),
-              ),
-            Connected(:final peer) => _ConnectedView(
-                peer: peer,
-                elapsed: _elapsed,
-                muted: _muted,
-                speakerOn: _speakerOn,
-                onToggleMute: _toggleMute,
-                onToggleSpeaker: _toggleSpeaker,
-                onEnd: () =>
-                    ref.read(callControllerProvider.notifier).endCall(),
-              ),
-            Ended(:final reason) => _TerminalView(
-                message: reason,
-                onDone: () =>
-                    ref.read(callControllerProvider.notifier).reset(),
-              ),
-            Failed(:final error) => _TerminalView(
-                message: error,
-                onDone: () =>
-                    ref.read(callControllerProvider.notifier).reset(),
-              ),
-            Idle() => const SizedBox.shrink(),
-          },
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  Widget _phase(CallState state) {
+    return switch (state) {
+      Incoming(:final peer) => _IncomingView(
+        peer: peer,
+        onAccept: _accept,
+        onDecline: () =>
+            ref.read(callControllerProvider.notifier).declineCall(),
+      ),
+      Outgoing(:final peer) => _PendingView(
+        peer: peer,
+        label: 'Calling',
+        onCancel: () => ref.read(callControllerProvider.notifier).endCall(),
+      ),
+      Connecting(:final peer) => _PendingView(
+        peer: peer,
+        label: 'Connecting',
+        onCancel: () => ref.read(callControllerProvider.notifier).endCall(),
+      ),
+      Connected(:final peer) => _ConnectedView(
+        peer: peer,
+        elapsed: _elapsed,
+        muted: _muted,
+        speakerOn: _speakerOn,
+        onToggleMute: _toggleMute,
+        onToggleSpeaker: _toggleSpeaker,
+        onEnd: () => ref.read(callControllerProvider.notifier).endCall(),
+      ),
+      Ended(:final reason) => _TerminalView(
+        message: reason,
+        onDone: () => ref.read(callControllerProvider.notifier).reset(),
+      ),
+      Failed(:final error) => _TerminalView(
+        message: error,
+        onDone: () => ref.read(callControllerProvider.notifier).reset(),
+      ),
+      Idle() => const SizedBox.shrink(),
+    };
   }
 }
 

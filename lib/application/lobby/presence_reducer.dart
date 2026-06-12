@@ -15,9 +15,9 @@ class PresenceReducer {
     return switch (message) {
       PresenceMessage(:final users) => _normalize(users, selfId),
       UserJoinedMessage(:final user) => _normalize(
-          [...current, user],
-          selfId,
-        ),
+        [...current, user],
+        selfId,
+      ),
       UserLeftMessage(:final userId) =>
         current.where((u) => u.userId != userId).toList(),
       _ => current,

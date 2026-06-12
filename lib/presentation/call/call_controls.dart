@@ -89,10 +89,12 @@ class _ControlButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final background =
-        active ? theme.colorScheme.primary : theme.colorScheme.surface;
-    final foreground =
-        active ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface;
+    final background = active
+        ? theme.colorScheme.primary
+        : theme.colorScheme.surface;
+    final foreground = active
+        ? theme.colorScheme.onPrimary
+        : theme.colorScheme.onSurface;
     return Tooltip(
       message: tooltip,
       child: Material(

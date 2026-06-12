@@ -29,15 +29,15 @@ sealed class CallState with _$CallState {
   const factory CallState.failed({required String error}) = Failed;
 
   User? get peer => switch (this) {
-        Outgoing(:final peer) => peer,
-        Incoming(:final peer) => peer,
-        Connecting(:final peer) => peer,
-        Connected(:final peer) => peer,
-        _ => null,
-      };
+    Outgoing(:final peer) => peer,
+    Incoming(:final peer) => peer,
+    Connecting(:final peer) => peer,
+    Connected(:final peer) => peer,
+    _ => null,
+  };
 
   bool get isActive => switch (this) {
-        Idle() || Ended() || Failed() => false,
-        _ => true,
-      };
+    Idle() || Ended() || Failed() => false,
+    _ => true,
+  };
 }

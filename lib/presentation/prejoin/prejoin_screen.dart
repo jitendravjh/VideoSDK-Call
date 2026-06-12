@@ -203,8 +203,7 @@ class _PermissionBanner extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           TextButton(
-            onPressed: () =>
-                permanentlyDenied ? onOpenSettings() : onGrant(),
+            onPressed: () => permanentlyDenied ? onOpenSettings() : onGrant(),
             child: Text(permanentlyDenied ? 'Settings' : 'Grant'),
           ),
         ],

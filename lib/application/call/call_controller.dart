@@ -171,10 +171,10 @@ class CallController extends _$CallController {
       case CallEndMessage(:final reason):
         _onRemoteEnd(reason);
       case PresenceMessage() ||
-            UserJoinedMessage() ||
-            UserLeftMessage() ||
-            RegisterMessage() ||
-            RegisteredMessage():
+          UserJoinedMessage() ||
+          UserLeftMessage() ||
+          RegisterMessage() ||
+          RegisteredMessage():
         break;
     }
   }
@@ -261,8 +261,8 @@ class CallController extends _$CallController {
   }
 
   String _reasonLabel(String? reason) => switch (reason) {
-        'offline' => 'User is offline',
-        'peer-left' => 'Peer left the call',
-        _ => 'Call ended',
-      };
+    'offline' => 'User is offline',
+    'peer-left' => 'Peer left the call',
+    _ => 'Call ended',
+  };
 }

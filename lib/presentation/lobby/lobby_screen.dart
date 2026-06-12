@@ -9,6 +9,7 @@ import 'package:meet_videosdk/application/lobby/session_controller.dart';
 import 'package:meet_videosdk/core/call_code.dart';
 import 'package:meet_videosdk/data/models/user.dart';
 import 'package:meet_videosdk/presentation/common/app_router.dart';
+import 'package:meet_videosdk/presentation/common/connection_banner.dart';
 import 'package:meet_videosdk/presentation/common/connection_status_chip.dart';
 
 class LobbyScreen extends ConsumerWidget {
@@ -35,36 +36,46 @@ class LobbyScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: Column(
         children: [
-          _CodeCard(code: self?.userId ?? '', displayName: self?.displayName),
-          const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: () => _showJoinDialog(context, ref, self),
-            icon: const Icon(Icons.dialpad),
-            label: const Text('Join with a code'),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'People online',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+          const ConnectionBanner(),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _CodeCard(
+                  code: self?.userId ?? '',
+                  displayName: self?.displayName,
                 ),
-          ),
-          const SizedBox(height: 8),
-          if (users.isEmpty)
-            const _EmptyPeople()
-          else
-            ...users.map(
-              (user) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: _UserTile(
-                  user: user,
-                  onCall: () => _startCall(context, user),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: () => _showJoinDialog(context, ref, self),
+                  icon: const Icon(Icons.dialpad),
+                  label: const Text('Join with a code'),
                 ),
-              ),
+                const SizedBox(height: 24),
+                Text(
+                  'People online',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (users.isEmpty)
+                  const _EmptyPeople()
+                else
+                  ...users.map(
+                    (user) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _UserTile(
+                        user: user,
+                        onCall: () => _startCall(context, user),
+                      ),
+                    ),
+                  ),
+              ],
             ),
+          ),
         ],
       ),
     );
@@ -129,7 +140,9 @@ class _CodeCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    displayName == null ? 'YOUR CODE' : 'YOUR CODE  ·  $displayName',
+                    displayName == null
+                        ? 'YOUR CODE'
+                        : 'YOUR CODE  ·  $displayName',
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                       letterSpacing: 1.2,
@@ -236,8 +249,9 @@ class _UserTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final initial =
-        user.displayName.isNotEmpty ? user.displayName[0].toUpperCase() : '?';
+    final initial = user.displayName.isNotEmpty
+        ? user.displayName[0].toUpperCase()
+        : '?';
 
     return Card(
       child: ListTile(

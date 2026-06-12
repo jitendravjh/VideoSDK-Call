@@ -14,49 +14,49 @@ class SignalCodec {
   ({String event, Map<String, dynamic> payload}) encode(SignalMessage message) {
     return switch (message) {
       RegisterMessage(:final userId, :final displayName) => (
-          event: SignalEvents.register,
-          payload: {'displayName': displayName, 'userId': ?userId},
-        ),
+        event: SignalEvents.register,
+        payload: {'displayName': displayName, 'userId': ?userId},
+      ),
       RegisteredMessage(:final user) => (
-          event: SignalEvents.registered,
-          payload: {'user': user.toJson()},
-        ),
+        event: SignalEvents.registered,
+        payload: {'user': user.toJson()},
+      ),
       PresenceMessage(:final users) => (
-          event: SignalEvents.presence,
-          payload: {'users': users.map((u) => u.toJson()).toList()},
-        ),
+        event: SignalEvents.presence,
+        payload: {'users': users.map((u) => u.toJson()).toList()},
+      ),
       UserJoinedMessage(:final user) => (
-          event: SignalEvents.userJoined,
-          payload: {'user': user.toJson()},
-        ),
+        event: SignalEvents.userJoined,
+        payload: {'user': user.toJson()},
+      ),
       UserLeftMessage(:final userId) => (
-          event: SignalEvents.userLeft,
-          payload: {'userId': userId},
-        ),
+        event: SignalEvents.userLeft,
+        payload: {'userId': userId},
+      ),
       OfferMessage(:final from, :final to, :final sdp) => (
-          event: SignalEvents.callOffer,
-          payload: {'from': from, 'to': to, 'sdp': sdp},
-        ),
+        event: SignalEvents.callOffer,
+        payload: {'from': from, 'to': to, 'sdp': sdp},
+      ),
       AnswerMessage(:final from, :final to, :final sdp) => (
-          event: SignalEvents.callAnswer,
-          payload: {'from': from, 'to': to, 'sdp': sdp},
-        ),
+        event: SignalEvents.callAnswer,
+        payload: {'from': from, 'to': to, 'sdp': sdp},
+      ),
       DeclineMessage(:final from, :final to) => (
-          event: SignalEvents.callDecline,
-          payload: {'from': from, 'to': to},
-        ),
+        event: SignalEvents.callDecline,
+        payload: {'from': from, 'to': to},
+      ),
       IceCandidateMessage(:final from, :final to, :final candidate) => (
-          event: SignalEvents.iceCandidate,
-          payload: {'from': from, 'to': to, 'candidate': candidate.toJson()},
-        ),
+        event: SignalEvents.iceCandidate,
+        payload: {'from': from, 'to': to, 'candidate': candidate.toJson()},
+      ),
       CallEndMessage(:final from, :final to, :final reason) => (
-          event: SignalEvents.callEnd,
-          payload: {
-            'from': from,
-            'to': to,
-            'reason': ?reason,
-          },
-        ),
+        event: SignalEvents.callEnd,
+        payload: {
+          'from': from,
+          'to': to,
+          'reason': ?reason,
+        },
+      ),
     };
   }
 
@@ -68,53 +68,53 @@ class SignalCodec {
     try {
       return switch (event) {
         SignalEvents.register => SignalMessage.register(
-            displayName: json['displayName'] as String,
-            userId: json['userId'] as String?,
-          ),
+          displayName: json['displayName'] as String,
+          userId: json['userId'] as String?,
+        ),
         SignalEvents.registered => SignalMessage.registered(
-            user: User.fromJson(
-              Map<String, dynamic>.from(json['user'] as Map),
-            ),
+          user: User.fromJson(
+            Map<String, dynamic>.from(json['user'] as Map),
           ),
+        ),
         SignalEvents.presence => SignalMessage.presence(
-            users: (json['users'] as List)
-                .map((e) => User.fromJson(Map<String, dynamic>.from(e as Map)))
-                .toList(),
-          ),
+          users: (json['users'] as List)
+              .map((e) => User.fromJson(Map<String, dynamic>.from(e as Map)))
+              .toList(),
+        ),
         SignalEvents.userJoined => SignalMessage.userJoined(
-            user: User.fromJson(
-              Map<String, dynamic>.from(json['user'] as Map),
-            ),
+          user: User.fromJson(
+            Map<String, dynamic>.from(json['user'] as Map),
           ),
+        ),
         SignalEvents.userLeft => SignalMessage.userLeft(
-            userId: json['userId'] as String,
-          ),
+          userId: json['userId'] as String,
+        ),
         SignalEvents.callOffer => SignalMessage.offer(
-            from: json['from'] as String,
-            to: json['to'] as String,
-            sdp: json['sdp'] as String,
-          ),
+          from: json['from'] as String,
+          to: json['to'] as String,
+          sdp: json['sdp'] as String,
+        ),
         SignalEvents.callAnswer => SignalMessage.answer(
-            from: json['from'] as String,
-            to: json['to'] as String,
-            sdp: json['sdp'] as String,
-          ),
+          from: json['from'] as String,
+          to: json['to'] as String,
+          sdp: json['sdp'] as String,
+        ),
         SignalEvents.callDecline => SignalMessage.decline(
-            from: json['from'] as String,
-            to: json['to'] as String,
-          ),
+          from: json['from'] as String,
+          to: json['to'] as String,
+        ),
         SignalEvents.iceCandidate => SignalMessage.iceCandidate(
-            from: json['from'] as String,
-            to: json['to'] as String,
-            candidate: IceCandidatePayload.fromJson(
-              Map<String, dynamic>.from(json['candidate'] as Map),
-            ),
+          from: json['from'] as String,
+          to: json['to'] as String,
+          candidate: IceCandidatePayload.fromJson(
+            Map<String, dynamic>.from(json['candidate'] as Map),
           ),
+        ),
         SignalEvents.callEnd => SignalMessage.callEnd(
-            from: json['from'] as String,
-            to: json['to'] as String,
-            reason: json['reason'] as String?,
-          ),
+          from: json['from'] as String,
+          to: json['to'] as String,
+          reason: json['reason'] as String?,
+        ),
         _ => null,
       };
     } on Object {
