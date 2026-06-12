@@ -12,9 +12,12 @@ part 'signal_message.freezed.dart';
 @freezed
 sealed class SignalMessage with _$SignalMessage {
   const factory SignalMessage.register({
-    required String userId,
     required String displayName,
+    String? userId,
   }) = RegisterMessage;
+
+  const factory SignalMessage.registered({required User user}) =
+      RegisteredMessage;
 
   const factory SignalMessage.presence({required List<User> users}) =
       PresenceMessage;

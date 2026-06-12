@@ -110,8 +110,8 @@ class SignalingService implements SignalingTransport {
     if (self == null) return;
     send(
       SignalMessage.register(
-        userId: self.userId,
         displayName: self.displayName,
+        userId: self.userId.isEmpty ? null : self.userId,
       ),
     );
   }
@@ -121,6 +121,10 @@ class SignalingService implements SignalingTransport {
     if (message == null) {
       _log.warn('dropped malformed $event payload');
       return;
+    }
+    // Adopt the server-assigned code so a reconnect re-registers the same id.
+    if (message is RegisteredMessage) {
+      _self = message.user;
     }
     _messages.add(message);
   }
@@ -134,6 +138,7 @@ class SignalingService implements SignalingTransport {
   }
 
   static const List<String> _inboundEvents = [
+    SignalEvents.registered,
     SignalEvents.presence,
     SignalEvents.userJoined,
     SignalEvents.userLeft,

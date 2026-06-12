@@ -15,7 +15,11 @@ class SignalCodec {
     return switch (message) {
       RegisterMessage(:final userId, :final displayName) => (
           event: SignalEvents.register,
-          payload: {'userId': userId, 'displayName': displayName},
+          payload: {'displayName': displayName, 'userId': ?userId},
+        ),
+      RegisteredMessage(:final user) => (
+          event: SignalEvents.registered,
+          payload: {'user': user.toJson()},
         ),
       PresenceMessage(:final users) => (
           event: SignalEvents.presence,
@@ -64,8 +68,13 @@ class SignalCodec {
     try {
       return switch (event) {
         SignalEvents.register => SignalMessage.register(
-            userId: json['userId'] as String,
             displayName: json['displayName'] as String,
+            userId: json['userId'] as String?,
+          ),
+        SignalEvents.registered => SignalMessage.registered(
+            user: User.fromJson(
+              Map<String, dynamic>.from(json['user'] as Map),
+            ),
           ),
         SignalEvents.presence => SignalMessage.presence(
             users: (json['users'] as List)

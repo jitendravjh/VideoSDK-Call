@@ -24,6 +24,25 @@ const socketByUser = new Map();
 // userId -> peerUserId, tracks the other party once a call is offered
 const activeCalls = new Map();
 
+// Human-typable code charset, omitting easily confused characters (0/O, 1/I/L).
+const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+
+function randomCode() {
+  let code = '';
+  for (let i = 0; i < 6; i += 1) {
+    code += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
+  }
+  return code;
+}
+
+function uniqueCode() {
+  let code = randomCode();
+  while (socketByUser.has(code)) {
+    code = randomCode();
+  }
+  return code;
+}
+
 function presenceList() {
   return [...users.values()].map((u) => ({
     userId: u.userId,
@@ -55,21 +74,27 @@ function clearCall(userId) {
 
 io.on('connection', (socket) => {
   socket.on('register', (data) => {
-    const userId = data?.userId;
     const displayName = data?.displayName;
-    if (typeof userId !== 'string' || typeof displayName !== 'string') {
+    if (typeof displayName !== 'string') {
       return;
     }
 
-    // Drop a stale socket if this userId is reconnecting.
-    const existingSocket = socketByUser.get(userId);
+    // The client passes back its previously assigned code when reconnecting so
+    // its identity (and any shared code) survives the drop. A fresh client, or
+    // one whose code is already taken by a live socket, gets a new code.
+    const requested = typeof data?.userId === 'string' ? data.userId : '';
+    let userId = requested;
+    const existingSocket = requested ? socketByUser.get(requested) : undefined;
     if (existingSocket && existingSocket !== socket.id) {
-      users.delete(existingSocket);
+      userId = uniqueCode();
+    } else if (!requested) {
+      userId = uniqueCode();
     }
 
     users.set(socket.id, { userId, displayName });
     socketByUser.set(userId, socket.id);
 
+    socket.emit('registered', { user: { userId, displayName } });
     socket.emit('presence', { users: presenceList() });
     socket.broadcast.emit('user-joined', {
       user: { userId, displayName },

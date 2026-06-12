@@ -3,6 +3,7 @@ class SignalEvents {
   const SignalEvents._();
 
   static const String register = 'register';
+  static const String registered = 'registered';
   static const String presence = 'presence';
   static const String userJoined = 'user-joined';
   static const String userLeft = 'user-left';

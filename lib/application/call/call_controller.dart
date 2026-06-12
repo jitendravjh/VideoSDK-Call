@@ -138,7 +138,8 @@ class CallController extends _$CallController {
       case PresenceMessage() ||
             UserJoinedMessage() ||
             UserLeftMessage() ||
-            RegisterMessage():
+            RegisterMessage() ||
+            RegisteredMessage():
         break;
     }
   }
