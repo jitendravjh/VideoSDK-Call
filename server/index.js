@@ -106,6 +106,15 @@ io.on('connection', (socket) => {
   socket.on('call-offer', (data) => {
     const { from, to, sdp } = data ?? {};
     if (!from || !to) return;
+
+    // The callee is already in a call with someone else: reject as busy
+    // instead of overwriting their existing call mapping.
+    const existingPeer = activeCalls.get(to);
+    if (existingPeer && existingPeer !== from) {
+      relayTo(from, 'call-end', { from: to, to: from, reason: 'busy' });
+      return;
+    }
+
     activeCalls.set(from, to);
     activeCalls.set(to, from);
     const delivered = relayTo(to, 'call-offer', { from, to, sdp });
