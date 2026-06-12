@@ -19,8 +19,10 @@ class AppConfig {
   static const String _hostOverride = String.fromEnvironment('SIGNALING_HOST');
   static const String _urlOverride = String.fromEnvironment('SIGNALING_URL');
 
-  static const int signalingPort =
-      int.fromEnvironment('SIGNALING_PORT', defaultValue: 3000);
+  static const int signalingPort = int.fromEnvironment(
+    'SIGNALING_PORT',
+    defaultValue: 3000,
+  );
 
   static String get signalingHost {
     if (_hostOverride.isNotEmpty) {
