@@ -267,6 +267,18 @@ flutter test
 
 Run `flutter analyze` for a zero-warning `very_good_analysis` pass.
 
+Optional end-to-end signalling check (`server/e2e_call.mjs`): two real WebRTC
+peers complete a call through the running server (register, offer/answer,
+trickle ICE, data-channel chat, reach `connected`), mirroring the app's
+protocol. It needs a Node WebRTC implementation:
+
+```
+cd server
+npm install --no-save @roamhq/wrtc socket.io-client
+npm start &           # in another terminal
+node e2e_call.mjs
+```
+
 ---
 
 ## AI tool usage
