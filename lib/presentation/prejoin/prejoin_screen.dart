@@ -56,9 +56,16 @@ class _PrejoinScreenState extends ConsumerState<PrejoinScreen>
     final result = await _permissions.request(camera: false);
     if (!mounted) return;
     setState(() => _micPermission = result);
-    if (result == MediaPermissionResult.granted) {
+    if (result != MediaPermissionResult.granted) return;
+    // On desktop/web the OS or browser prompts here, inside getUserMedia; a
+    // denial throws rather than coming back through permission_handler.
+    try {
       await _call.openPreview(video: false);
       if (mounted) setState(() => _ready = true);
+    } on Object {
+      if (mounted) {
+        setState(() => _micPermission = MediaPermissionResult.denied);
+      }
     }
   }
 
@@ -76,8 +83,16 @@ class _PrejoinScreenState extends ConsumerState<PrejoinScreen>
     } else {
       setState(() => _cameraOn = false);
     }
-    await _call.openPreview(video: _cameraOn);
-    await _call.setMicEnabled(enabled: _micOn);
+    try {
+      await _call.openPreview(video: _cameraOn);
+      await _call.setMicEnabled(enabled: _micOn);
+    } on Object {
+      if (!mounted) return;
+      setState(() => _cameraOn = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not start the camera')),
+      );
+    }
   }
 
   Future<void> _toggleMic() async {
