@@ -17,6 +17,7 @@ dependencies:
   logger: ^2.7.0
   permission_handler: ^12.0.3
   riverpod_annotation: ^4.0.3
+  shared_preferences: ^2.5.5
   socket_io_client: ^3.1.5
   uuid: ^4.5.3
 
