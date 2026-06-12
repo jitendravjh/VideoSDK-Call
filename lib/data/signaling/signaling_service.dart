@@ -1,0 +1,147 @@
+import 'dart:async';
+
+import 'package:meet_videosdk/core/constants.dart';
+import 'package:meet_videosdk/core/logging.dart';
+import 'package:meet_videosdk/data/models/signal_message.dart';
+import 'package:meet_videosdk/data/models/user.dart';
+import 'package:meet_videosdk/data/signaling/signal_codec.dart';
+import 'package:meet_videosdk/data/signaling/signal_events.dart';
+import 'package:socket_io_client/socket_io_client.dart' as io;
+
+enum SignalingConnectionState {
+  disconnected,
+  connecting,
+  connected,
+  reconnecting,
+}
+
+/// Wraps the Socket.IO transport. Owns the socket, decodes inbound events into
+/// [SignalMessage]s, and re-registers the local user on every (re)connection.
+///
+/// This is the only place the rest of the app touches the socket. It exposes
+/// broadcast streams; it never shows UI or navigates.
+class SignalingService {
+  SignalingService();
+
+  final SignalCodec _codec = const SignalCodec();
+  final AppLogger _log = AppLogger('SignalingService');
+
+  io.Socket? _socket;
+  User? _self;
+
+  final StreamController<SignalMessage> _messages =
+      StreamController<SignalMessage>.broadcast();
+  final StreamController<SignalingConnectionState> _connection =
+      StreamController<SignalingConnectionState>.broadcast();
+
+  SignalingConnectionState _state = SignalingConnectionState.disconnected;
+
+  Stream<SignalMessage> get messages => _messages.stream;
+  Stream<SignalingConnectionState> get connectionState => _connection.stream;
+  SignalingConnectionState get currentState => _state;
+  User? get self => _self;
+
+  void connect(User self) {
+    _self = self;
+    if (_socket != null) {
+      _registerSelf();
+      return;
+    }
+
+    _setState(SignalingConnectionState.connecting);
+
+    final socket = io.io(
+      AppConfig.signalingUrl,
+      io.OptionBuilder()
+          .setTransports(['websocket'])
+          .disableAutoConnect()
+          .enableReconnection()
+          .build(),
+    );
+    _socket = socket;
+
+    socket
+      ..onConnect((_) {
+        _log.info('connected');
+        _setState(SignalingConnectionState.connected);
+        _registerSelf();
+      })
+      ..onReconnectAttempt((_) {
+        _setState(SignalingConnectionState.reconnecting);
+      })
+      ..onDisconnect((_) {
+        _log.warn('disconnected');
+        _setState(SignalingConnectionState.disconnected);
+      });
+
+    for (final event in _inboundEvents) {
+      socket.on(event, (data) => _onInbound(event, data));
+    }
+
+    socket.connect();
+  }
+
+  void send(SignalMessage message) {
+    final socket = _socket;
+    if (socket == null) {
+      _log.warn('send dropped, socket not connected');
+      return;
+    }
+    final encoded = _codec.encode(message);
+    socket.emit(encoded.event, encoded.payload);
+  }
+
+  void disconnect() {
+    _self = null;
+    _socket
+      ?..clearListeners()
+      ..dispose();
+    _socket = null;
+    _setState(SignalingConnectionState.disconnected);
+  }
+
+  Future<void> dispose() async {
+    disconnect();
+    await _messages.close();
+    await _connection.close();
+  }
+
+  void _registerSelf() {
+    final self = _self;
+    if (self == null) return;
+    send(
+      SignalMessage.register(
+        userId: self.userId,
+        displayName: self.displayName,
+      ),
+    );
+  }
+
+  void _onInbound(String event, Object? data) {
+    final message = _codec.decode(event, data);
+    if (message == null) {
+      _log.warn('dropped malformed $event payload');
+      return;
+    }
+    _messages.add(message);
+  }
+
+  void _setState(SignalingConnectionState state) {
+    if (_state == state) return;
+    _state = state;
+    if (!_connection.isClosed) {
+      _connection.add(state);
+    }
+  }
+
+  static const List<String> _inboundEvents = [
+    SignalEvents.presence,
+    SignalEvents.userJoined,
+    SignalEvents.userLeft,
+    SignalEvents.callOffer,
+    SignalEvents.callAnswer,
+    SignalEvents.callDecline,
+    SignalEvents.iceCandidate,
+    SignalEvents.callEnd,
+  ];
+}
