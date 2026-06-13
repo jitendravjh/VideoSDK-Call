@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:meet_videosdk/data/signaling/signaling_service.dart';
 import 'package:meet_videosdk/data/signaling/signaling_transport.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -12,11 +14,26 @@ SignalingTransport signalingService(Ref ref) {
 }
 
 @Riverpod(keepAlive: true)
-Stream<SignalingConnectionState> connectionState(Ref ref) async* {
+Stream<SignalingConnectionState> connectionState(Ref ref) {
   final service = ref.watch(signalingServiceProvider);
-  // The connection stream is a broadcast stream that only emits on change, so
-  // a late subscriber (e.g. the in-call banner) would otherwise never learn the
-  // socket is already connected. Emit the current state first.
-  yield service.currentState;
-  yield* service.connectionState;
+  // The underlying connection stream is a broadcast that only emits on change.
+  // Seeding the current state and subscribing must happen in one synchronous
+  // step: an `async*` that yields current state then `yield*`s the stream
+  // suspends between the two, and a change landing in that gap (e.g. an almost
+  // instant connect over a local link) is dropped, stranding the banner on the
+  // stale state. Doing both inside onListen closes that window.
+  late final StreamController<SignalingConnectionState> controller;
+  StreamSubscription<SignalingConnectionState>? subscription;
+  controller = StreamController<SignalingConnectionState>(
+    onListen: () {
+      controller.add(service.currentState);
+      subscription = service.connectionState.listen(
+        controller.add,
+        onError: controller.addError,
+        onDone: controller.close,
+      );
+    },
+    onCancel: () => subscription?.cancel(),
+  );
+  return controller.stream;
 }
