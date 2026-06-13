@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:meet_videosdk/data/signaling/signaling_providers.dart';
 import 'package:meet_videosdk/data/signaling/signaling_transport.dart';
+import 'package:meet_videosdk/presentation/common/adaptive.dart';
 
 /// Shows a thin banner whenever the signalling socket is not connected.
 ///
@@ -28,14 +29,7 @@ class ConnectionBanner extends ConsumerWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SizedBox(
-              width: 14,
-              height: 14,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: theme.colorScheme.onSecondaryContainer,
-              ),
-            ),
+            AdaptiveSpinner(color: theme.colorScheme.onSecondaryContainer),
             const SizedBox(width: 10),
             Text(
               disconnected

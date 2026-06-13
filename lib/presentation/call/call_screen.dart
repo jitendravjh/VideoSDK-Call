@@ -13,6 +13,7 @@ import 'package:meet_videosdk/data/webrtc/webrtc_providers.dart';
 import 'package:meet_videosdk/presentation/call/call_controls.dart';
 import 'package:meet_videosdk/presentation/call/chat_sheet.dart';
 import 'package:meet_videosdk/presentation/call/mic_level_bar.dart';
+import 'package:meet_videosdk/presentation/common/adaptive.dart';
 import 'package:meet_videosdk/presentation/common/connection_banner.dart';
 import 'package:meet_videosdk/presentation/common/user_avatar.dart';
 import 'package:meet_videosdk/presentation/prejoin/prejoin_screen.dart';
@@ -208,14 +209,7 @@ class _PendingView extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
+              AdaptiveSpinner(color: theme.colorScheme.onSurfaceVariant),
               const SizedBox(width: 10),
               Text(
                 label,
@@ -453,10 +447,7 @@ class _TerminalView extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 24),
-          OutlinedButton(
-            onPressed: onDone,
-            child: const Text('Back to home'),
-          ),
+          AdaptiveTextButton(onPressed: onDone, label: 'Back to home'),
         ],
       ),
     );

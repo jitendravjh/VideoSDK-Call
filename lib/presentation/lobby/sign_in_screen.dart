@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:meet_videosdk/application/lobby/session_controller.dart';
+import 'package:meet_videosdk/presentation/common/adaptive.dart';
 import 'package:meet_videosdk/presentation/common/brand_logo.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
@@ -39,56 +40,52 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Align(child: BrandLogo(size: 88)),
-                  const SizedBox(height: 28),
-                  Text(
-                    'VideoSDK Call',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.5,
-                    ),
+    return AdaptiveScaffold(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Align(child: BrandLogo(size: 88)),
+                const SizedBox(height: 28),
+                Text(
+                  'VideoSDK Call',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Voice and video calls over WebRTC. Enter a name to see who '
-                    'is online or share your code.',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      height: 1.4,
-                    ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Voice and video calls over WebRTC. Enter a name to see who '
+                  'is online or share your code.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    height: 1.4,
                   ),
-                  const SizedBox(height: 32),
-                  TextField(
-                    controller: _controller,
-                    textInputAction: TextInputAction.go,
-                    textCapitalization: TextCapitalization.words,
-                    autofocus: true,
-                    decoration: const InputDecoration(
-                      hintText: 'Display name',
-                      prefixIcon: Icon(Icons.person_outline),
-                    ),
-                    onSubmitted: (_) => _submit(),
-                  ),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: _canSubmit ? _submit : null,
-                    child: const Text('Continue'),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 32),
+                AdaptiveTextField(
+                  controller: _controller,
+                  hintText: 'Display name',
+                  prefixIcon: Icons.person_outline,
+                  autofocus: true,
+                  textCapitalization: TextCapitalization.words,
+                  textInputAction: TextInputAction.go,
+                  onSubmitted: (_) => _submit(),
+                ),
+                const SizedBox(height: 16),
+                AdaptiveButton(
+                  onPressed: _canSubmit ? _submit : null,
+                  label: 'Continue',
+                ),
+              ],
             ),
           ),
         ),
