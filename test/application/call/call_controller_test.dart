@@ -10,10 +10,12 @@ import 'package:meet_videosdk/data/models/chat_message.dart';
 import 'package:meet_videosdk/data/models/ice_candidate_payload.dart';
 import 'package:meet_videosdk/data/models/signal_message.dart';
 import 'package:meet_videosdk/data/models/user.dart';
+import 'package:meet_videosdk/data/session/session_store.dart';
 import 'package:meet_videosdk/data/signaling/signaling_providers.dart';
 import 'package:meet_videosdk/data/signaling/signaling_transport.dart';
 import 'package:meet_videosdk/data/webrtc/webrtc_engine.dart';
 import 'package:meet_videosdk/data/webrtc/webrtc_providers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const _alice = User(userId: 'ALICE1', displayName: 'Alice');
 const _bob = User(userId: 'BOBBB2', displayName: 'Bob');
@@ -25,14 +27,17 @@ void main() {
   late _FakeEngine engine;
   late ProviderContainer container;
 
-  setUp(() {
+  setUp(() async {
     signaling = _FakeSignaling();
     engine = _FakeEngine();
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
     container = ProviderContainer(
       overrides: [
         signalingServiceProvider.overrideWithValue(signaling),
         webRtcEngineProvider.overrideWithValue(engine),
         sessionControllerProvider.overrideWith(() => _StubSession(_alice)),
+        sharedPreferencesProvider.overrideWithValue(prefs),
       ],
     );
     addTearDown(container.dispose);

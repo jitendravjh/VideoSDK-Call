@@ -41,6 +41,11 @@ class LobbyScreen extends ConsumerWidget {
             child: Center(child: ConnectionStatusChip()),
           ),
           IconButton(
+            tooltip: 'Call history',
+            icon: const Icon(Icons.history),
+            onPressed: () => unawaited(context.push(AppRoutes.history)),
+          ),
+          IconButton(
             tooltip: 'Sign out',
             icon: const Icon(Icons.logout),
             onPressed: () =>
