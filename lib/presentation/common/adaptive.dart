@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:meet_videosdk/presentation/common/liquid_glass.dart';
 
 /// True on iOS, where the app renders Cupertino chrome; everything else
 /// (Android, macOS, web) uses Material 3.
@@ -76,12 +77,21 @@ class AdaptiveButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isCupertino) {
+      // A tinted Liquid Glass capsule: prominent enough for a primary action
+      // while keeping the translucent, blurred glass material.
+      final tintColor = tint ?? Theme.of(context).colorScheme.primary;
       return SizedBox(
         width: double.infinity,
-        child: CupertinoButton.filled(
+        child: CupertinoButton(
           onPressed: onPressed,
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          child: _content(const TextStyle(fontWeight: FontWeight.w600)),
+          padding: EdgeInsets.zero,
+          child: LiquidGlass(
+            color: tintColor,
+            opacity: 0.85,
+            borderRadius: BorderRadius.circular(16),
+            padding: const EdgeInsets.symmetric(vertical: 15),
+            child: _content(Colors.white),
+          ),
         ),
       );
     }
@@ -99,12 +109,19 @@ class AdaptiveButton extends StatelessWidget {
     return FilledButton(onPressed: onPressed, style: style, child: Text(label));
   }
 
-  Widget _content(TextStyle style) {
-    if (icon == null) return Text(label, style: style);
+  Widget _content(Color color) {
+    final style = TextStyle(
+      color: color,
+      fontWeight: FontWeight.w600,
+      fontSize: 17,
+    );
+    if (icon == null) {
+      return Text(label, style: style, textAlign: TextAlign.center);
+    }
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 20),
+        Icon(icon, size: 20, color: color),
         const SizedBox(width: 8),
         Text(label, style: style),
       ],
