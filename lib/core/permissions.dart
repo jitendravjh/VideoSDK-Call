@@ -8,18 +8,15 @@ enum MediaPermissionResult { granted, denied, permanentlyDenied }
 /// single result the UI can act on, including the permanently-denied case that
 /// requires sending the user to app settings.
 ///
-/// On desktop and web, `permission_handler` does not drive the camera/mic
-/// prompt; the OS or browser prompts when `getUserMedia` runs (backed by the
-/// macOS entitlements and Info.plist usage strings). On those platforms this
-/// reports `granted` so the flow proceeds to `getUserMedia`, where a denial
-/// surfaces as a media error instead.
+/// Only Android needs an explicit runtime request before `getUserMedia`. On
+/// iOS, macOS, and web the OS or browser prompts when `getUserMedia` runs
+/// (backed by the Info.plist usage strings and macOS entitlements), so this
+/// reports `granted` there and lets a denial surface as a media error instead.
 class MediaPermissions {
   const MediaPermissions();
 
   bool get isManaged =>
-      !kIsWeb &&
-      (defaultTargetPlatform == TargetPlatform.android ||
-          defaultTargetPlatform == TargetPlatform.iOS);
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
   Future<MediaPermissionResult> request({required bool camera}) async {
     if (!isManaged) {
