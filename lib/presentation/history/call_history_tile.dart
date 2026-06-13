@@ -1,50 +1,16 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:meet_videosdk/application/history/call_history_controller.dart';
 import 'package:meet_videosdk/core/formatting.dart';
 import 'package:meet_videosdk/data/models/call_record.dart';
 import 'package:meet_videosdk/data/models/user.dart';
 import 'package:meet_videosdk/presentation/common/app_router.dart';
 import 'package:meet_videosdk/presentation/common/user_avatar.dart';
 
-class CallHistoryScreen extends ConsumerWidget {
-  const CallHistoryScreen({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final history = ref.watch(callHistoryControllerProvider);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Call history'),
-        actions: [
-          if (history.isNotEmpty)
-            IconButton(
-              tooltip: 'Clear history',
-              icon: const Icon(Icons.delete_outline),
-              onPressed: () =>
-                  ref.read(callHistoryControllerProvider.notifier).clear(),
-            ),
-        ],
-      ),
-      body: history.isEmpty
-          ? const _EmptyHistory()
-          : ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: history.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 8),
-              itemBuilder: (context, index) =>
-                  _HistoryTile(record: history[index]),
-            ),
-    );
-  }
-}
-
-class _HistoryTile extends StatelessWidget {
-  const _HistoryTile({required this.record});
+/// A single call-history entry. Tapping it starts a call back to that peer.
+class CallHistoryTile extends StatelessWidget {
+  const CallHistoryTile({required this.record, super.key});
 
   final CallRecord record;
 
@@ -103,38 +69,4 @@ class _HistoryTile extends StatelessWidget {
     CallOutcome.failed => 'Failed',
     CallOutcome.unreachable => 'Unreachable',
   };
-}
-
-class _EmptyHistory extends StatelessWidget {
-  const _EmptyHistory();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.history,
-              size: 56,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 16),
-            Text('No calls yet', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text(
-              'Your call history will appear here.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

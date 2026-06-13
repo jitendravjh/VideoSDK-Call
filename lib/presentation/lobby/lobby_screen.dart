@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:meet_videosdk/application/history/call_history_controller.dart';
 import 'package:meet_videosdk/application/lobby/lobby_controller.dart';
 import 'package:meet_videosdk/application/lobby/session_controller.dart';
 import 'package:meet_videosdk/core/call_code.dart';
@@ -11,7 +12,7 @@ import 'package:meet_videosdk/data/models/user.dart';
 import 'package:meet_videosdk/presentation/common/app_router.dart';
 import 'package:meet_videosdk/presentation/common/brand_logo.dart';
 import 'package:meet_videosdk/presentation/common/connection_banner.dart';
-import 'package:meet_videosdk/presentation/common/connection_status_chip.dart';
+import 'package:meet_videosdk/presentation/history/call_history_tile.dart';
 
 class LobbyScreen extends ConsumerWidget {
   const LobbyScreen({super.key});
@@ -20,6 +21,7 @@ class LobbyScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final self = ref.watch(sessionControllerProvider);
     final users = ref.watch(lobbyControllerProvider);
+    final history = ref.watch(callHistoryControllerProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -36,15 +38,6 @@ class LobbyScreen extends ConsumerWidget {
           ],
         ),
         actions: [
-          const Padding(
-            padding: EdgeInsets.only(right: 12),
-            child: Center(child: ConnectionStatusChip()),
-          ),
-          IconButton(
-            tooltip: 'Call history',
-            icon: const Icon(Icons.history),
-            onPressed: () => unawaited(context.push(AppRoutes.history)),
-          ),
           IconButton(
             tooltip: 'Sign out',
             icon: const Icon(Icons.logout),
@@ -90,6 +83,36 @@ class LobbyScreen extends ConsumerWidget {
                         user: user,
                         onCall: () => _startCall(context, user),
                       ),
+                    ),
+                  ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Call history',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                    if (history.isNotEmpty)
+                      TextButton(
+                        onPressed: () => ref
+                            .read(callHistoryControllerProvider.notifier)
+                            .clear(),
+                        child: const Text('Clear'),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (history.isEmpty)
+                  const _EmptyHistory()
+                else
+                  ...history.map(
+                    (record) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: CallHistoryTile(record: record),
                     ),
                   ),
               ],
@@ -346,6 +369,24 @@ class _EmptyPeople extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _EmptyHistory extends StatelessWidget {
+  const _EmptyHistory();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Text(
+        'No calls yet.',
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
       ),
     );
   }
