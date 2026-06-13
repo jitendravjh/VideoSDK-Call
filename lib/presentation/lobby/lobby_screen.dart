@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +9,6 @@ import 'package:meet_videosdk/application/lobby/lobby_controller.dart';
 import 'package:meet_videosdk/application/lobby/session_controller.dart';
 import 'package:meet_videosdk/core/call_code.dart';
 import 'package:meet_videosdk/data/models/user.dart';
-import 'package:meet_videosdk/presentation/common/adaptive.dart';
 import 'package:meet_videosdk/presentation/common/app_router.dart';
 import 'package:meet_videosdk/presentation/common/brand_logo.dart';
 import 'package:meet_videosdk/presentation/common/connection_banner.dart';
@@ -25,22 +23,28 @@ class LobbyScreen extends ConsumerWidget {
     final users = ref.watch(lobbyControllerProvider);
     final history = ref.watch(callHistoryControllerProvider);
 
-    return AdaptiveScaffold(
-      titleWidget: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const BrandLogo(size: 28),
-          const SizedBox(width: 10),
-          Text(
-            'VideoSDK Call',
-            style: Theme.of(context).appBarTheme.titleTextStyle,
+    return Scaffold(
+      appBar: AppBar(
+        titleSpacing: 16,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const BrandLogo(size: 28),
+            const SizedBox(width: 10),
+            Text(
+              'VideoSDK Call',
+              style: Theme.of(context).appBarTheme.titleTextStyle,
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Sign out',
+            icon: const Icon(Icons.logout),
+            onPressed: () =>
+                ref.read(sessionControllerProvider.notifier).signOut(),
           ),
         ],
-      ),
-      trailing: AdaptiveNavButton(
-        icon: Icons.logout,
-        tooltip: 'Sign out',
-        onPressed: () => ref.read(sessionControllerProvider.notifier).signOut(),
       ),
       body: Column(
         children: [
@@ -54,12 +58,12 @@ class LobbyScreen extends ConsumerWidget {
                   displayName: self?.displayName,
                 ),
                 const SizedBox(height: 12),
-                AdaptiveButton(
+                FilledButton.icon(
                   onPressed: (self != null && self.userId.isNotEmpty)
                       ? () => _showJoinDialog(context, ref, self)
                       : null,
-                  icon: Icons.dialpad,
-                  label: 'Join with a code',
+                  icon: const Icon(Icons.dialpad),
+                  label: const Text('Join with a code'),
                 ),
                 const SizedBox(height: 24),
                 Text(
@@ -93,11 +97,11 @@ class LobbyScreen extends ConsumerWidget {
                       ),
                     ),
                     if (history.isNotEmpty)
-                      AdaptiveTextButton(
+                      TextButton(
                         onPressed: () => ref
                             .read(callHistoryControllerProvider.notifier)
                             .clear(),
-                        label: 'Clear',
+                        child: const Text('Clear'),
                       ),
                   ],
                 ),
@@ -124,7 +128,7 @@ class LobbyScreen extends ConsumerWidget {
     WidgetRef ref,
     User? self,
   ) async {
-    final code = await showAdaptiveDialog<String>(
+    final code = await showDialog<String>(
       context: context,
       builder: (context) => const _JoinDialog(),
     );
@@ -202,7 +206,14 @@ class _CodeCard extends StatelessWidget {
                 else
                   Row(
                     children: [
-                      AdaptiveSpinner(color: scheme.onPrimaryContainer),
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: scheme.onPrimaryContainer,
+                        ),
+                      ),
                       const SizedBox(width: 12),
                       Text(
                         'Assigning a code',
@@ -264,42 +275,29 @@ class _JoinDialogState extends State<_JoinDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog.adaptive(
+    return AlertDialog(
       title: const Text('Join with a code'),
-      content: Padding(
-        padding: const EdgeInsets.only(top: 12),
-        child: AdaptiveTextField(
-          controller: _controller,
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        textCapitalization: TextCapitalization.characters,
+        textInputAction: TextInputAction.go,
+        decoration: const InputDecoration(
           hintText: 'Enter code (e.g. ABC-DEF)',
-          prefixIcon: Icons.dialpad,
-          autofocus: true,
-          textCapitalization: TextCapitalization.characters,
-          textInputAction: TextInputAction.go,
-          onSubmitted: (_) => _submit(),
+          prefixIcon: Icon(Icons.dialpad),
         ),
+        onSubmitted: (_) => _submit(),
       ),
-      actions: isCupertino
-          ? [
-              CupertinoDialogAction(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
-              ),
-              CupertinoDialogAction(
-                isDefaultAction: true,
-                onPressed: _submit,
-                child: const Text('Connect'),
-              ),
-            ]
-          : [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: _submit,
-                child: const Text('Connect'),
-              ),
-            ],
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: const Text('Connect'),
+        ),
+      ],
     );
   }
 }

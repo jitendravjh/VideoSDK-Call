@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
@@ -8,7 +7,6 @@ import 'package:meet_videosdk/application/call/call_controller.dart';
 import 'package:meet_videosdk/core/permissions.dart';
 import 'package:meet_videosdk/data/models/user.dart';
 import 'package:meet_videosdk/data/webrtc/webrtc_providers.dart';
-import 'package:meet_videosdk/presentation/common/adaptive.dart';
 import 'package:meet_videosdk/presentation/common/user_avatar.dart';
 
 class PrejoinScreen extends ConsumerStatefulWidget {
@@ -129,131 +127,117 @@ class _PrejoinScreenState extends ConsumerState<PrejoinScreen>
     final renderer = ref.watch(webRtcEngineProvider).localRenderer;
     final blocked = _micPermission != MediaPermissionResult.granted;
 
-    return AdaptiveScaffold(
-      automaticallyImplyLeading: !widget.incoming,
-      title: widget.incoming
-          ? '${widget.peer.displayName} is calling'
-          : 'Call ${widget.peer.displayName}',
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: ColoredBox(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  child: _cameraOn && _ready
-                      ? RTCVideoView(
-                          renderer,
-                          mirror: true,
-                          objectFit:
-                              RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                        )
-                      : Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              UserAvatar(
-                                name: widget.peer.displayName,
-                                radius: 44,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                _cameraOn ? 'Starting camera' : 'Camera off',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                ),
-              ),
-            ),
-            if (blocked) ...[
-              const SizedBox(height: 16),
-              _PermissionBanner(
-                permanentlyDenied:
-                    _micPermission == MediaPermissionResult.permanentlyDenied,
-                onGrant: _setup,
-                onOpenSettings: _permissions.openSettings,
-              ),
-            ],
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _Toggle(
-                  icon: _micOn ? Icons.mic : Icons.mic_off,
-                  label: _micOn ? 'Mic on' : 'Mic off',
-                  active: _micOn,
-                  onPressed: blocked ? null : _toggleMic,
-                ),
-                const SizedBox(width: 24),
-                _Toggle(
-                  icon: _cameraOn ? Icons.videocam : Icons.videocam_off,
-                  label: _cameraOn ? 'Camera on' : 'Camera off',
-                  active: _cameraOn,
-                  onPressed: blocked ? null : _toggleCamera,
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            if (widget.incoming)
-              Row(
-                children: [
-                  Expanded(
-                    child: _DeclineButton(onPressed: _decline),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: AdaptiveButton(
-                      onPressed: blocked ? null : _answer,
-                      icon: Icons.call,
-                      label: 'Answer',
-                      tint: Colors.green.shade600,
-                    ),
-                  ),
-                ],
-              )
-            else
-              AdaptiveButton(
-                onPressed: blocked ? null : _start,
-                icon: Icons.call,
-                label: 'Call ${widget.peer.displayName}',
-              ),
-          ],
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: !widget.incoming,
+        title: Text(
+          widget.incoming
+              ? '${widget.peer.displayName} is calling'
+              : 'Call ${widget.peer.displayName}',
         ),
       ),
-    );
-  }
-}
-
-class _DeclineButton extends StatelessWidget {
-  const _DeclineButton({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    if (isCupertino) {
-      return CupertinoButton(
-        color: CupertinoColors.destructiveRed,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        onPressed: onPressed,
-        child: const Text(
-          'Decline',
-          style: TextStyle(fontWeight: FontWeight.w600),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: ColoredBox(
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    child: _cameraOn && _ready
+                        ? RTCVideoView(
+                            renderer,
+                            mirror: true,
+                            objectFit: RTCVideoViewObjectFit
+                                .RTCVideoViewObjectFitCover,
+                          )
+                        : Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                UserAvatar(
+                                  name: widget.peer.displayName,
+                                  radius: 44,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  _cameraOn ? 'Starting camera' : 'Camera off',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                  ),
+                ),
+              ),
+              if (blocked) ...[
+                const SizedBox(height: 16),
+                _PermissionBanner(
+                  permanentlyDenied:
+                      _micPermission == MediaPermissionResult.permanentlyDenied,
+                  onGrant: _setup,
+                  onOpenSettings: _permissions.openSettings,
+                ),
+              ],
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _Toggle(
+                    icon: _micOn ? Icons.mic : Icons.mic_off,
+                    label: _micOn ? 'Mic on' : 'Mic off',
+                    active: _micOn,
+                    onPressed: blocked ? null : _toggleMic,
+                  ),
+                  const SizedBox(width: 24),
+                  _Toggle(
+                    icon: _cameraOn ? Icons.videocam : Icons.videocam_off,
+                    label: _cameraOn ? 'Camera on' : 'Camera off',
+                    active: _cameraOn,
+                    onPressed: blocked ? null : _toggleCamera,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              if (widget.incoming)
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _decline,
+                        icon: const Icon(Icons.call_end),
+                        label: const Text('Decline'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: theme.colorScheme.error,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: blocked ? null : _answer,
+                        icon: const Icon(Icons.call),
+                        label: const Text('Answer'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.green.shade600,
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                FilledButton.icon(
+                  onPressed: blocked ? null : _start,
+                  icon: const Icon(Icons.call),
+                  label: Text('Call ${widget.peer.displayName}'),
+                ),
+            ],
+          ),
         ),
-      );
-    }
-    return OutlinedButton.icon(
-      onPressed: onPressed,
-      icon: const Icon(Icons.call_end),
-      label: const Text('Decline'),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: Theme.of(context).colorScheme.error,
       ),
     );
   }
