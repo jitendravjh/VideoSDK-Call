@@ -219,24 +219,29 @@ class WebRtcService implements WebRtcEngine {
 
   @override
   void sendChat(ChatMessage message) {
-    _sendOnChannel(DataChannelCodec.encodeChat(message), 'chat');
+    final channel = _dataChannel;
+    if (channel == null) {
+      _log.warn('chat dropped, data channel not open');
+      return;
+    }
+    unawaited(
+      channel.send(RTCDataChannelMessage(DataChannelCodec.encodeChat(message))),
+    );
   }
 
   @override
   void sendMediaState({required bool cameraOn, required bool micOn}) {
-    _sendOnChannel(
-      DataChannelCodec.encodeMediaState(cameraOn: cameraOn, micOn: micOn),
-      'media-state',
-    );
-  }
-
-  void _sendOnChannel(String payload, String label) {
+    // Dropped silently before the channel opens (e.g. toggling in the pre-join
+    // preview); the current state is re-sent once the channel opens.
     final channel = _dataChannel;
-    if (channel == null) {
-      _log.warn('$label dropped, data channel not open');
-      return;
-    }
-    unawaited(channel.send(RTCDataChannelMessage(payload)));
+    if (channel == null) return;
+    unawaited(
+      channel.send(
+        RTCDataChannelMessage(
+          DataChannelCodec.encodeMediaState(cameraOn: cameraOn, micOn: micOn),
+        ),
+      ),
+    );
   }
 
   @override

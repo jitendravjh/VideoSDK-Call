@@ -11,8 +11,12 @@ SignalingTransport signalingService(Ref ref) {
   return service;
 }
 
-@riverpod
-Stream<SignalingConnectionState> connectionState(Ref ref) {
+@Riverpod(keepAlive: true)
+Stream<SignalingConnectionState> connectionState(Ref ref) async* {
   final service = ref.watch(signalingServiceProvider);
-  return service.connectionState;
+  // The connection stream is a broadcast stream that only emits on change, so
+  // a late subscriber (e.g. the in-call banner) would otherwise never learn the
+  // socket is already connected. Emit the current state first.
+  yield service.currentState;
+  yield* service.connectionState;
 }
