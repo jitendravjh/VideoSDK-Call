@@ -289,7 +289,11 @@ class WebRtcService implements WebRtcEngine {
     }
 
     await _releaseLocalStream();
-    remoteRenderer.srcObject = null;
+    // Only touch the renderer once initialized; declining a call before any
+    // media was opened leaves the renderers uninitialized.
+    if (_renderersInitialized) {
+      remoteRenderer.srcObject = null;
+    }
 
     await pc?.close();
     _pc = null;
@@ -303,7 +307,9 @@ class WebRtcService implements WebRtcEngine {
     }
     await stream.dispose();
     _localStream = null;
-    localRenderer.srcObject = null;
+    if (_renderersInitialized) {
+      localRenderer.srcObject = null;
+    }
   }
 
   @override

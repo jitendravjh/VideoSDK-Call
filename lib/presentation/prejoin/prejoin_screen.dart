@@ -27,9 +27,14 @@ class _PrejoinScreenState extends ConsumerState<PrejoinScreen>
   bool _ready = false;
   MediaPermissionResult _micPermission = MediaPermissionResult.granted;
 
+  // Captured while mounted so it can be used safely in dispose(); reading a
+  // provider through `ref` during teardown is unsafe in Riverpod.
+  late final CallController _call;
+
   @override
   void initState() {
     super.initState();
+    _call = ref.read(callControllerProvider.notifier);
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _setup());
   }
@@ -37,7 +42,7 @@ class _PrejoinScreenState extends ConsumerState<PrejoinScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    unawaited(ref.read(callControllerProvider.notifier).cancelPreview());
+    unawaited(_call.cancelPreview());
     super.dispose();
   }
 
@@ -49,8 +54,6 @@ class _PrejoinScreenState extends ConsumerState<PrejoinScreen>
       unawaited(_setup());
     }
   }
-
-  CallController get _call => ref.read(callControllerProvider.notifier);
 
   Future<void> _setup() async {
     final result = await _permissions.request(camera: false);
