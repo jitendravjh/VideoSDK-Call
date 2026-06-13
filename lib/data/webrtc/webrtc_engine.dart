@@ -35,6 +35,12 @@ abstract class WebRtcEngine {
   Future<void> setCameraEnabled({required bool enabled});
   Future<void> switchCamera();
   Future<void> setSpeakerphone({required bool enabled});
+
+  /// The current local microphone level (0..1) read from the peer connection's
+  /// audio stats. Returns 0 when there is no active connection. Used as the
+  /// cross-platform mic meter where the native Android meter is unavailable.
+  Future<double> readInputLevel();
+
   Future<void> closeSession();
   Future<void> dispose();
 }

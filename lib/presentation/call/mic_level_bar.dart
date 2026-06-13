@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:meet_videosdk/data/native/mic_level_service.dart';
 
-/// Live microphone level driven by the native Kotlin meter. Hidden on platforms
-/// without the native bridge.
+/// Live microphone level. Driven by the native Kotlin meter on Android and by
+/// the peer connection's WebRTC audio stats on iOS, macOS, and web.
 class MicLevelBar extends ConsumerWidget {
   const MicLevelBar({this.onLight, super.key});
 
@@ -13,11 +13,8 @@ class MicLevelBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!const MicLevelService().isSupported) {
-      return const SizedBox.shrink();
-    }
-
     final theme = Theme.of(context);
+    final native = const MicLevelService().isNative;
     final level = ref.watch(micLevelProvider).value ?? 0.0;
     final light = onLight ?? true;
     final trackColor = light
@@ -36,7 +33,7 @@ class MicLevelBar extends ConsumerWidget {
             Icon(Icons.graphic_eq, size: 14, color: labelColor),
             const SizedBox(width: 6),
             Text(
-              'Mic level (native)',
+              native ? 'Mic level (native)' : 'Mic level',
               style: theme.textTheme.labelSmall?.copyWith(color: labelColor),
             ),
           ],

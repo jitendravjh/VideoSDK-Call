@@ -250,6 +250,9 @@ class _FakeEngine implements WebRtcEngine {
   Future<void> setSpeakerphone({required bool enabled}) async {}
 
   @override
+  Future<double> readInputLevel() async => 0;
+
+  @override
   Future<void> closeSession() async {
     sessionsClosed++;
     hasLocalMediaValue = false;

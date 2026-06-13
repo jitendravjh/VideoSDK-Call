@@ -272,6 +272,27 @@ class WebRtcService implements WebRtcEngine {
     await Helper.setSpeakerphoneOn(enabled);
   }
 
+  @override
+  Future<double> readInputLevel() async {
+    final pc = _pc;
+    if (pc == null) return 0;
+    try {
+      final reports = await pc.getStats();
+      for (final report in reports) {
+        // The outbound (captured) microphone level is reported by the local
+        // audio `media-source`. Populated by libwebrtc (iOS/macOS) and by
+        // Chromium (web); browsers that omit it leave the level at 0.
+        if (report.type == 'media-source' && report.values['kind'] == 'audio') {
+          final level = report.values['audioLevel'];
+          if (level is num) return level.toDouble().clamp(0.0, 1.0);
+        }
+      }
+    } on Object catch (error) {
+      _log.warn('getStats failed: $error');
+    }
+    return 0;
+  }
+
   /// Tears down the peer connection and media for one call while keeping the
   /// renderers and callbacks so the service can be reused for the next call.
   @override
