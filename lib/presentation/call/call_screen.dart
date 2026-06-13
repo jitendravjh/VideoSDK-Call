@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:meet_videosdk/application/call/call_controller.dart';
 import 'package:meet_videosdk/application/call/remote_media_controller.dart';
-import 'package:meet_videosdk/core/permissions.dart';
 import 'package:meet_videosdk/data/models/call_state.dart';
 import 'package:meet_videosdk/data/models/user.dart';
 import 'package:meet_videosdk/data/webrtc/webrtc_providers.dart';
@@ -14,6 +13,7 @@ import 'package:meet_videosdk/presentation/call/chat_sheet.dart';
 import 'package:meet_videosdk/presentation/call/mic_level_bar.dart';
 import 'package:meet_videosdk/presentation/common/connection_banner.dart';
 import 'package:meet_videosdk/presentation/common/user_avatar.dart';
+import 'package:meet_videosdk/presentation/prejoin/prejoin_screen.dart';
 
 class CallScreen extends ConsumerStatefulWidget {
   const CallScreen({super.key});
@@ -68,26 +68,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     });
   }
 
-  Future<void> _accept() async {
-    const permissions = MediaPermissions();
-    var video = true;
-    var result = await permissions.request(camera: true);
-    if (result != MediaPermissionResult.granted) {
-      video = false;
-      result = await permissions.request(camera: false);
-    }
-    if (!mounted) return;
-    final notifier = ref.read(callControllerProvider.notifier);
-    if (result != MediaPermissionResult.granted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Microphone permission is required')),
-      );
-      unawaited(notifier.declineCall());
-      return;
-    }
-    await notifier.acceptCall(video: video);
-  }
-
   void _toggleMute() {
     setState(() => _muted = !_muted);
     unawaited(
@@ -130,38 +110,40 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     ref.listen(callControllerProvider, _onStateChange);
     final state = ref.watch(callControllerProvider);
 
+    // The callee gets the shared pre-join screen (preview + mic/camera toggles)
+    // before answering, mirroring the caller's setup.
+    final Widget body = state is Incoming
+        ? PrejoinScreen(peer: state.peer, incoming: true)
+        : Scaffold(
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            body: SafeArea(
+              child: Stack(
+                children: [
+                  Positioned.fill(child: _phase(state)),
+                  const Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: ConnectionBanner(),
+                  ),
+                ],
+              ),
+            ),
+          );
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _handleBack(state);
       },
-      child: Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        body: SafeArea(
-          child: Stack(
-            children: [
-              Positioned.fill(child: _phase(state)),
-              const Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: ConnectionBanner(),
-              ),
-            ],
-          ),
-        ),
-      ),
+      child: body,
     );
   }
 
   Widget _phase(CallState state) {
     return switch (state) {
-      Incoming(:final peer) => _IncomingView(
-        peer: peer,
-        onAccept: _accept,
-        onDecline: () =>
-            ref.read(callControllerProvider.notifier).declineCall(),
-      ),
+      // Incoming is handled by the pre-join screen in build().
+      Incoming() => const SizedBox.shrink(),
       Outgoing(:final peer) => _PendingView(
         peer: peer,
         label: 'Calling',
@@ -193,59 +175,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       ),
       Idle() => const SizedBox.shrink(),
     };
-  }
-}
-
-class _IncomingView extends StatelessWidget {
-  const _IncomingView({
-    required this.peer,
-    required this.onAccept,
-    required this.onDecline,
-  });
-
-  final User peer;
-  final VoidCallback onAccept;
-  final VoidCallback onDecline;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        children: [
-          const Spacer(),
-          UserAvatar(name: peer.displayName, radius: 56),
-          const SizedBox(height: 24),
-          Text(peer.displayName, style: theme.textTheme.headlineSmall),
-          const SizedBox(height: 8),
-          Text(
-            'Incoming call',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const Spacer(),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _CircleAction(
-                icon: Icons.call_end,
-                color: theme.colorScheme.error,
-                label: 'Decline',
-                onPressed: onDecline,
-              ),
-              _CircleAction(
-                icon: Icons.call,
-                color: Colors.green.shade600,
-                label: 'Accept',
-                onPressed: onAccept,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
   }
 }
 

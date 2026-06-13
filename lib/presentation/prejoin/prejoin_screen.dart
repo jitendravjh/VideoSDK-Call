@@ -10,9 +10,13 @@ import 'package:meet_videosdk/data/webrtc/webrtc_providers.dart';
 import 'package:meet_videosdk/presentation/common/user_avatar.dart';
 
 class PrejoinScreen extends ConsumerStatefulWidget {
-  const PrejoinScreen({required this.peer, super.key});
+  const PrejoinScreen({required this.peer, this.incoming = false, super.key});
 
   final User peer;
+
+  /// `true` when shown to the callee before answering (adds an Answer/Decline
+  /// pair); `false` for the caller's setup before placing the call.
+  final bool incoming;
 
   @override
   ConsumerState<PrejoinScreen> createState() => _PrejoinScreenState();
@@ -109,6 +113,14 @@ class _PrejoinScreenState extends ConsumerState<PrejoinScreen>
     await _call.startCall(widget.peer, video: _cameraOn);
   }
 
+  Future<void> _answer() async {
+    // Reuses the preview's already-open media; the call screen takes over once
+    // the state leaves Incoming.
+    await _call.acceptCall(video: _cameraOn);
+  }
+
+  void _decline() => unawaited(_call.declineCall());
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -116,7 +128,14 @@ class _PrejoinScreenState extends ConsumerState<PrejoinScreen>
     final blocked = _micPermission != MediaPermissionResult.granted;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Call ${widget.peer.displayName}')),
+      appBar: AppBar(
+        automaticallyImplyLeading: !widget.incoming,
+        title: Text(
+          widget.incoming
+              ? '${widget.peer.displayName} is calling'
+              : 'Call ${widget.peer.displayName}',
+        ),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -184,11 +203,38 @@ class _PrejoinScreenState extends ConsumerState<PrejoinScreen>
                 ],
               ),
               const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: blocked ? null : _start,
-                icon: const Icon(Icons.call),
-                label: Text('Call ${widget.peer.displayName}'),
-              ),
+              if (widget.incoming)
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _decline,
+                        icon: const Icon(Icons.call_end),
+                        label: const Text('Decline'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: theme.colorScheme.error,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: blocked ? null : _answer,
+                        icon: const Icon(Icons.call),
+                        label: const Text('Answer'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.green.shade600,
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                FilledButton.icon(
+                  onPressed: blocked ? null : _start,
+                  icon: const Icon(Icons.call),
+                  label: Text('Call ${widget.peer.displayName}'),
+                ),
             ],
           ),
         ),
@@ -224,8 +270,8 @@ class _PermissionBanner extends StatelessWidget {
           Expanded(
             child: Text(
               permanentlyDenied
-                  ? 'Microphone access is blocked. Enable it in settings to call.'
-                  : 'Microphone permission is required to start a call.',
+                  ? 'Microphone access is blocked. Enable it in settings.'
+                  : 'Microphone permission is required for a call.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onErrorContainer,
               ),
