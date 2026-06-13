@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:meet_videosdk/application/call/call_controller.dart';
+import 'package:meet_videosdk/application/call/chat_controller.dart';
 import 'package:meet_videosdk/application/call/remote_media_controller.dart';
+import 'package:meet_videosdk/core/formatting.dart';
 import 'package:meet_videosdk/data/models/call_state.dart';
 import 'package:meet_videosdk/data/models/user.dart';
 import 'package:meet_videosdk/data/webrtc/webrtc_providers.dart';
@@ -167,10 +169,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       ),
       Ended(:final reason) => _TerminalView(
         message: reason,
+        elapsed: _elapsed,
         onDone: () => ref.read(callControllerProvider.notifier).reset(),
       ),
       Failed(:final error) => _TerminalView(
         message: error,
+        elapsed: _elapsed,
         onDone: () => ref.read(callControllerProvider.notifier).reset(),
       ),
       Idle() => const SizedBox.shrink(),
@@ -264,6 +268,7 @@ class _ConnectedView extends ConsumerWidget {
     final localHasVideo = engine.hasVideo;
     final remoteHasVideo = ref.watch(remoteVideoProvider);
     final remoteMicOn = ref.watch(remoteMicProvider);
+    final unread = ref.watch(chatUnreadProvider);
     final onVideoBg = remoteHasVideo;
 
     return ColoredBox(
@@ -361,7 +366,11 @@ class _ConnectedView extends ConsumerWidget {
             left: 8,
             child: IconButton.filledTonal(
               tooltip: 'Chat',
-              icon: const Icon(Icons.chat_bubble_outline),
+              icon: Badge.count(
+                count: unread,
+                isLabelVisible: unread > 0,
+                child: const Icon(Icons.chat_bubble_outline),
+              ),
               onPressed: () => showChatSheet(context),
             ),
           ),
@@ -409,9 +418,14 @@ class _MutedChip extends StatelessWidget {
 }
 
 class _TerminalView extends StatelessWidget {
-  const _TerminalView({required this.message, required this.onDone});
+  const _TerminalView({
+    required this.message,
+    required this.elapsed,
+    required this.onDone,
+  });
 
   final String message;
+  final Duration elapsed;
   final VoidCallback onDone;
 
   @override
@@ -429,6 +443,15 @@ class _TerminalView extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(message, style: theme.textTheme.titleMedium),
+          if (elapsed > Duration.zero) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Duration ${Formatting.duration(elapsed)}',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
           OutlinedButton(
             onPressed: onDone,

@@ -28,6 +28,15 @@ class _ChatSheetState extends ConsumerState<ChatSheet> {
   final _scroll = ScrollController();
 
   @override
+  void initState() {
+    super.initState();
+    // Opening the chat clears the unread badge.
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => ref.read(chatUnreadProvider.notifier).reset(),
+    );
+  }
+
+  @override
   void dispose() {
     _input.dispose();
     _scroll.dispose();
@@ -59,6 +68,8 @@ class _ChatSheetState extends ConsumerState<ChatSheet> {
     final messages = ref.watch(chatControllerProvider);
 
     ref.listen(chatControllerProvider, (_, _) {
+      // New messages are visible while the sheet is open, so keep it read.
+      ref.read(chatUnreadProvider.notifier).reset();
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToEnd());
     });
 

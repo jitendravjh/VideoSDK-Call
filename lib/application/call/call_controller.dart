@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:meet_videosdk/application/call/chat_controller.dart';
 import 'package:meet_videosdk/application/call/remote_media_controller.dart';
+import 'package:meet_videosdk/application/history/call_history_controller.dart';
 import 'package:meet_videosdk/application/lobby/lobby_controller.dart';
 import 'package:meet_videosdk/application/lobby/session_controller.dart';
 import 'package:meet_videosdk/core/logging.dart';
+import 'package:meet_videosdk/data/models/call_record.dart';
 import 'package:meet_videosdk/data/models/call_state.dart';
 import 'package:meet_videosdk/data/models/chat_message.dart';
 import 'package:meet_videosdk/data/models/ice_candidate_payload.dart';
@@ -36,6 +38,13 @@ class CallController extends _$CallController {
   bool _localMicOn = true;
   bool _localCameraOn = false;
 
+  // Tracking for the history record of the current call.
+  CallDirection? _direction;
+  User? _historyPeer;
+  DateTime? _startedAt;
+  DateTime? _connectedAt;
+  bool _recorded = false;
+
   @override
   CallState build() {
     final sub = _signaling.messages.listen(_onSignal);
@@ -49,6 +58,7 @@ class CallController extends _$CallController {
     final self = _self;
     if (self == null || self.userId.isEmpty || state is! Idle) return;
 
+    _beginCall(peer, CallDirection.outgoing);
     _resetMediaState(cameraOn: video);
     state = CallState.outgoing(peer: peer);
     _bindEngine();
@@ -103,6 +113,7 @@ class CallController extends _$CallController {
     _signaling.send(
       SignalMessage.decline(from: self.userId, to: current.peer.userId),
     );
+    _recordCall(CallOutcome.declined);
     state = const CallState.idle();
     // Clear any ICE the ringing caller trickled so it cannot leak into the
     // next call's peer connection.
@@ -117,6 +128,9 @@ class CallController extends _$CallController {
         SignalMessage.callEnd(from: self.userId, to: peer.userId),
       );
     }
+    _recordCall(
+      _connectedAt != null ? CallOutcome.completed : CallOutcome.missed,
+    );
     await _teardown();
     state = const CallState.ended(reason: 'Call ended');
   }
@@ -161,6 +175,7 @@ class CallController extends _$CallController {
     _localMicOn = true;
     _localCameraOn = cameraOn;
     ref.read(chatControllerProvider.notifier).clear();
+    ref.read(chatUnreadProvider.notifier).reset();
     ref.read(remoteVideoProvider.notifier).update(hasVideo: false);
     ref.read(remoteMicProvider.notifier).update(micOn: true);
   }
@@ -214,7 +229,9 @@ class CallController extends _$CallController {
       }
       return;
     }
-    state = CallState.incoming(peer: _resolvePeer(from), offerSdp: sdp);
+    final peer = _resolvePeer(from);
+    _beginCall(peer, CallDirection.incoming);
+    state = CallState.incoming(peer: peer, offerSdp: sdp);
   }
 
   Future<void> _onAnswer(String sdp) async {
@@ -226,12 +243,14 @@ class CallController extends _$CallController {
 
   void _onDeclined() {
     if (state is! Outgoing) return;
+    _recordCall(CallOutcome.declined);
     unawaited(_teardown());
     state = const CallState.ended(reason: 'Call declined');
   }
 
   void _onRemoteEnd(String? reason) {
     if (!state.isActive) return;
+    _recordCall(_outcomeForRemoteEnd(reason));
     unawaited(_teardown());
     state = CallState.ended(reason: _reasonLabel(reason));
   }
@@ -239,14 +258,22 @@ class CallController extends _$CallController {
   void _handleConnected() {
     final peer = state.peer;
     if (peer != null && state.isActive) {
+      _connectedAt ??= DateTime.now();
       state = CallState.connected(peer: peer);
     }
   }
 
   void _handleFailed() {
     if (!state.isActive) return;
+    _recordCall(CallOutcome.failed);
     unawaited(_teardown());
     state = const CallState.failed(error: 'Connection failed');
+  }
+
+  CallOutcome _outcomeForRemoteEnd(String? reason) {
+    if (_connectedAt != null) return CallOutcome.completed;
+    if (reason == 'offline') return CallOutcome.unreachable;
+    return CallOutcome.missed;
   }
 
   void _sendLocalCandidate(IceCandidatePayload candidate) {
@@ -268,8 +295,10 @@ class CallController extends _$CallController {
       onConnected: _handleConnected,
       onFailed: _handleFailed,
       onDataChannelOpen: _broadcastMediaState,
-      onChatMessage: (message) =>
-          ref.read(chatControllerProvider.notifier).add(message),
+      onChatMessage: (message) {
+        ref.read(chatControllerProvider.notifier).add(message);
+        ref.read(chatUnreadProvider.notifier).increment();
+      },
       onRemoteMedia: ({required hasVideo}) =>
           ref.read(remoteVideoProvider.notifier).update(hasVideo: hasVideo),
       onRemoteMediaState: ({required cameraOn, required micOn}) {
@@ -280,8 +309,44 @@ class CallController extends _$CallController {
   }
 
   void _fail(String message) {
+    _recordCall(CallOutcome.failed);
     unawaited(_teardown());
     state = CallState.failed(error: message);
+  }
+
+  void _beginCall(User peer, CallDirection direction) {
+    _direction = direction;
+    _historyPeer = peer;
+    _startedAt = DateTime.now();
+    _connectedAt = null;
+    _recorded = false;
+  }
+
+  void _recordCall(CallOutcome outcome) {
+    final peer = _historyPeer;
+    final direction = _direction;
+    final startedAt = _startedAt;
+    if (_recorded || peer == null || direction == null || startedAt == null) {
+      return;
+    }
+    _recorded = true;
+    final connectedAt = _connectedAt;
+    final duration = connectedAt == null
+        ? Duration.zero
+        : DateTime.now().difference(connectedAt);
+    ref
+        .read(callHistoryControllerProvider.notifier)
+        .add(
+          CallRecord(
+            id: _uuid.v4(),
+            peerId: peer.userId,
+            peerName: peer.displayName,
+            direction: direction,
+            outcome: outcome,
+            startedAt: startedAt,
+            durationSeconds: duration.inSeconds,
+          ),
+        );
   }
 
   Future<void> _teardown() => _engine.closeSession();
