@@ -66,6 +66,12 @@ class SignalingService implements SignalingTransport {
       ..onReconnectAttempt((_) {
         _setState(SignalingConnectionState.reconnecting);
       })
+      ..onConnectError((error) {
+        _log.warn('connect error: $error');
+      })
+      ..onError((error) {
+        _log.warn('socket error: $error');
+      })
       ..onDisconnect((_) {
         _log.warn('disconnected');
         _setState(SignalingConnectionState.disconnected);

@@ -6,6 +6,13 @@
 	<string>Camera access is needed for video calls.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Microphone access is needed for voice and video calls.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Connects to the call signalling server running on your local network.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
