@@ -7,6 +7,7 @@ import 'package:meet_videosdk/data/models/user.dart';
 import 'package:meet_videosdk/data/signaling/signal_codec.dart';
 import 'package:meet_videosdk/data/signaling/signal_events.dart';
 import 'package:meet_videosdk/data/signaling/signaling_transport.dart';
+import 'package:meet_videosdk/data/webrtc/ice_servers.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
 /// Wraps the Socket.IO transport. Owns the socket, decodes inbound events into
@@ -156,9 +157,11 @@ class SignalingService implements SignalingTransport {
       _log.warn('dropped malformed $event payload');
       return;
     }
-    // Adopt the server-assigned code so a reconnect re-registers the same id.
+    // Adopt the server-assigned code so a reconnect re-registers the same id,
+    // and the ICE servers (which may carry fresh TURN relay credentials).
     if (message is RegisteredMessage) {
       _self = message.user;
+      IceServers.update(message.iceServers);
     }
     _messages.add(message);
   }

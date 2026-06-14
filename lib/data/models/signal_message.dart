@@ -17,8 +17,10 @@ sealed class SignalMessage with _$SignalMessage {
     String? userId,
   }) = RegisterMessage;
 
-  const factory SignalMessage.registered({required User user}) =
-      RegisteredMessage;
+  const factory SignalMessage.registered({
+    required User user,
+    @Default(<Map<String, dynamic>>[]) List<Map<String, dynamic>> iceServers,
+  }) = RegisteredMessage;
 
   const factory SignalMessage.presence({required List<User> users}) =
       PresenceMessage;

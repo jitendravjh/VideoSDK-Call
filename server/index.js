@@ -7,6 +7,61 @@ import { Server } from 'socket.io';
 const PORT = process.env.PORT || 3000;
 const MAX_CHAT_LEN = 2000;
 
+// Cloudflare Realtime TURN. When these are set the server mints short-lived
+// relay credentials so calls work across different networks / cellular. The
+// API token stays here on the server and never reaches the client.
+const TURN_KEY_ID = process.env.TURN_KEY_ID;
+const TURN_API_TOKEN = process.env.TURN_API_TOKEN;
+const STUN_SERVER = { urls: 'stun:stun.l.google.com:19302' };
+// Credentials live 24h; refresh the cache after 12h so they never expire mid-call.
+const ICE_TTL_SECONDS = 86400;
+const ICE_REFRESH_MS = 12 * 60 * 60 * 1000;
+
+let iceCache = { servers: [STUN_SERVER], expiresAt: 0 };
+
+async function mintIceServers() {
+  if (!TURN_KEY_ID || !TURN_API_TOKEN) return [STUN_SERVER];
+  try {
+    const res = await fetch(
+      `https://rtc.live.cloudflare.com/v1/turn/keys/${TURN_KEY_ID}/credentials/generate-ice-servers`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${TURN_API_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ttl: ICE_TTL_SECONDS }),
+      },
+    );
+    if (!res.ok) {
+      console.warn(`TURN credential request failed: ${res.status}`);
+      return [STUN_SERVER];
+    }
+    const data = await res.json();
+    const cloudflare = Array.isArray(data.iceServers) ? data.iceServers : [];
+    // Drop the :53 URLs (blocked/timeout-prone on many ISPs) and keep the
+    // Google STUN first so direct P2P is still preferred over the relay.
+    const cleaned = cloudflare
+      .map((server) => {
+        const urls = (Array.isArray(server.urls) ? server.urls : [server.urls])
+          .filter((url) => typeof url === 'string' && !url.includes(':53'));
+        return { ...server, urls };
+      })
+      .filter((server) => server.urls.length > 0);
+    return [STUN_SERVER, ...cleaned];
+  } catch (error) {
+    console.warn('TURN credential request error:', error);
+    return [STUN_SERVER];
+  }
+}
+
+async function getIceServers() {
+  if (Date.now() < iceCache.expiresAt) return iceCache.servers;
+  const servers = await mintIceServers();
+  iceCache = { servers, expiresAt: Date.now() + ICE_REFRESH_MS };
+  return servers;
+}
+
 // Non-internal IPv4 addresses, so the operator can see (and apps can reach) the
 // server on the LAN.
 function lanAddresses() {
@@ -139,7 +194,7 @@ function leaveRoom(userId) {
 }
 
 io.on('connection', (socket) => {
-  socket.on('register', (data) => {
+  socket.on('register', async (data) => {
     const displayName = data?.displayName;
     if (typeof displayName !== 'string') {
       return;
@@ -160,7 +215,8 @@ io.on('connection', (socket) => {
     users.set(socket.id, { userId, displayName });
     socketByUser.set(userId, socket.id);
 
-    socket.emit('registered', { user: { userId, displayName } });
+    const iceServers = await getIceServers();
+    socket.emit('registered', { user: { userId, displayName }, iceServers });
     // Broadcast the full authoritative roster to everyone (not just the
     // joiner) so every client converges on the same list across reconnects and
     // missed deltas. Without this, a peer reached purely by code is never
@@ -380,5 +436,11 @@ httpServer.listen(PORT, () => {
     console.log('  advertising via mDNS as _videosdk._tcp');
   } catch (error) {
     console.warn('mDNS advertise failed (auto-discovery disabled):', error);
+  }
+  if (TURN_KEY_ID && TURN_API_TOKEN) {
+    console.log('  TURN relay enabled (Cloudflare) for cross-network calls');
+    getIceServers(); // pre-warm the credential cache so the first register is fast
+  } else {
+    console.log('  TURN relay disabled (set TURN_KEY_ID and TURN_API_TOKEN to enable)');
   }
 });

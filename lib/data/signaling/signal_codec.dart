@@ -18,9 +18,9 @@ class SignalCodec {
         event: SignalEvents.register,
         payload: {'displayName': displayName, 'userId': ?userId},
       ),
-      RegisteredMessage(:final user) => (
+      RegisteredMessage(:final user, :final iceServers) => (
         event: SignalEvents.registered,
-        payload: {'user': user.toJson()},
+        payload: {'user': user.toJson(), 'iceServers': iceServers},
       ),
       PresenceMessage(:final users) => (
         event: SignalEvents.presence,
@@ -145,6 +145,7 @@ class SignalCodec {
           user: User.fromJson(
             Map<String, dynamic>.from(json['user'] as Map),
           ),
+          iceServers: _parseIceServers(json['iceServers']),
         ),
         SignalEvents.presence => SignalMessage.presence(
           users: (json['users'] as List)
@@ -241,5 +242,23 @@ class SignalCodec {
     } on Object {
       return null;
     }
+  }
+
+  // ICE server entries arrive as JSON maps whose `urls` is a string or a list
+  // of strings; normalise the list form to `List<String>` so flutter_webrtc
+  // accepts it as-is.
+  static List<Map<String, dynamic>> _parseIceServers(Object? raw) {
+    if (raw is! List) return const [];
+    final result = <Map<String, dynamic>>[];
+    for (final entry in raw) {
+      if (entry is! Map) continue;
+      final map = Map<String, dynamic>.from(entry);
+      final urls = map['urls'];
+      if (urls is List) {
+        map['urls'] = urls.map((u) => u.toString()).toList();
+      }
+      result.add(map);
+    }
+    return result;
   }
 }

@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:meet_videosdk/core/constants.dart';
 import 'package:meet_videosdk/data/models/ice_candidate_payload.dart';
 import 'package:meet_videosdk/data/webrtc/data_channel_codec.dart';
+import 'package:meet_videosdk/data/webrtc/ice_servers.dart';
 import 'package:meet_videosdk/data/webrtc/mesh_engine.dart';
 
 /// One remote participant: its peer connection, remote renderer, data channel,
@@ -125,7 +125,7 @@ class MeshService implements MeshEngine {
 
   Future<void> _addPeer(String peerId) async {
     final pc = await createPeerConnection({
-      'iceServers': AppConfig.iceServers,
+      'iceServers': IceServers.servers,
       'sdpSemantics': 'unified-plan',
     });
     final renderer = RTCVideoRenderer();

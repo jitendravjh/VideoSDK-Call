@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:meet_videosdk/core/constants.dart';
 import 'package:meet_videosdk/core/logging.dart';
 import 'package:meet_videosdk/data/models/chat_message.dart';
 import 'package:meet_videosdk/data/models/ice_candidate_payload.dart';
 import 'package:meet_videosdk/data/webrtc/data_channel_codec.dart';
+import 'package:meet_videosdk/data/webrtc/ice_servers.dart';
 import 'package:meet_videosdk/data/webrtc/webrtc_engine.dart';
 
 /// Owns a single [RTCPeerConnection] and the media attached to it.
@@ -123,7 +123,7 @@ class WebRtcService implements WebRtcEngine {
     _remoteDescriptionSet = false;
 
     final pc = await createPeerConnection({
-      'iceServers': AppConfig.iceServers,
+      'iceServers': IceServers.servers,
       'sdpSemantics': 'unified-plan',
     });
 
