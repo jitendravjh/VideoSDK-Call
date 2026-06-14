@@ -198,7 +198,33 @@ void main() {
     expect(messages, hasLength(1));
     expect(messages.single.text, 'hello team');
     expect(messages.single.senderId, 'ALICE1');
+    expect(messages.single.senderName, 'Alice');
   });
+
+  test(
+    'an incoming chat is added to the transcript and bumps unread',
+    () async {
+      await notifier().host();
+      signaling.emit(
+        const SignalMessage.meetingJoined(roomCode: 'MEET01', peers: []),
+      );
+      await _pump();
+
+      mesh.fireChat(
+        ChatMessage(
+          id: 'm1',
+          senderId: 'BOBBB2',
+          senderName: 'Bob',
+          text: 'hi all',
+          sentAt: DateTime(2026),
+        ),
+      );
+      await _pump();
+
+      expect(container.read(chatControllerProvider).single.text, 'hi all');
+      expect(container.read(chatUnreadProvider), 1);
+    },
+  );
 
   test('a meeting-error ends the meeting with a readable reason', () async {
     await notifier().join('NOPE99');
@@ -257,8 +283,10 @@ class _FakeMesh implements MeshEngine {
   bool closed = false;
 
   void Function(String peerId)? _onConnected;
+  void Function(ChatMessage message)? _onChat;
 
   void fireConnected(String peerId) => _onConnected?.call(peerId);
+  void fireChat(ChatMessage message) => _onChat?.call(message);
 
   @override
   RTCVideoRenderer get localRenderer => throw UnimplementedError();
@@ -280,6 +308,7 @@ class _FakeMesh implements MeshEngine {
     void Function(ChatMessage message)? onChat,
   }) {
     _onConnected = onConnected;
+    _onChat = onChat;
   }
 
   @override

@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:meet_videosdk/application/call/chat_controller.dart';
 import 'package:meet_videosdk/application/lobby/session_controller.dart';
+import 'package:meet_videosdk/core/call_code.dart';
 import 'package:meet_videosdk/data/models/chat_message.dart';
+import 'package:meet_videosdk/presentation/common/user_avatar.dart';
 
 /// Shows the shared chat transcript. [onSend] forwards the typed text to the
 /// active controller (1:1 call or meeting), so one sheet serves both.
@@ -164,19 +166,58 @@ class _Bubble extends StatelessWidget {
         ? theme.colorScheme.onPrimary
         : theme.colorScheme.onSurface;
 
-    return Align(
-      alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.72,
+    final bubble = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.66,
+      ),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(message.text, style: TextStyle(color: textColor)),
+    );
+
+    // Own messages: a right-aligned bubble. Incoming: the sender's avatar and
+    // name beside the bubble so group chat shows who said what.
+    if (isMine) {
+      return Align(
+        alignment: Alignment.centerRight,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 8, left: 40),
+          child: bubble,
         ),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Text(message.text, style: TextStyle(color: textColor)),
+      );
+    }
+
+    final name = (message.senderName?.isNotEmpty ?? false)
+        ? message.senderName!
+        : CallCode.format(message.senderId);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8, right: 32),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          UserAvatar(name: name, radius: 14),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 4, bottom: 2),
+                  child: Text(
+                    name,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                bubble,
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

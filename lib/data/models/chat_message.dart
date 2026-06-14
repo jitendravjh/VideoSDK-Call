@@ -7,7 +7,7 @@ part 'chat_message.g.dart';
 ///
 /// `senderId` identifies the author; the UI derives whether a message is
 /// outgoing by comparing it to the local user id, so no `isMine` flag travels
-/// over the wire.
+/// over the wire. `senderName` lets group chat show who sent each message.
 @freezed
 abstract class ChatMessage with _$ChatMessage {
   const factory ChatMessage({
@@ -15,6 +15,7 @@ abstract class ChatMessage with _$ChatMessage {
     required String senderId,
     required String text,
     required DateTime sentAt,
+    String? senderName,
   }) = _ChatMessage;
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) =>

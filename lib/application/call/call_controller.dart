@@ -211,6 +211,7 @@ class CallController extends _$CallController {
     final message = ChatMessage(
       id: _uuid.v4(),
       senderId: self.userId,
+      senderName: self.displayName,
       text: trimmed,
       sentAt: DateTime.now(),
     );
