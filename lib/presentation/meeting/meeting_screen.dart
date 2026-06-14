@@ -319,7 +319,6 @@ class _ActiveScaffold extends ConsumerWidget {
     );
   }
 
-  // Tap to expand any tile to fill the screen; the rest become a strip.
   Widget _focusedLayout(List<_TileData> tiles, _TileData focused) {
     final others = [
       for (final t in tiles)

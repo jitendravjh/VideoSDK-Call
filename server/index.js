@@ -414,7 +414,6 @@ io.on('connection', (socket) => {
       relayTo(peer, 'call-end', { from: userId, to: peer, reason: 'peer-left' });
     }
 
-    // Drop out of any meeting and tell the remaining members.
     leaveRoom(userId);
 
     io.emit('user-left', { userId });

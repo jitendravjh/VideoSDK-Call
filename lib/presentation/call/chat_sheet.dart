@@ -42,7 +42,6 @@ class _ChatSheetState extends ConsumerState<ChatSheet> {
   @override
   void initState() {
     super.initState();
-    // Opening the chat clears the unread badge.
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => ref.read(chatUnreadProvider.notifier).reset(),
     );
@@ -199,7 +198,6 @@ class _Bubble extends StatelessWidget {
       );
     }
 
-    // 1:1 call: a plain left-aligned bubble, exactly like before.
     if (!showSender) {
       return Align(
         alignment: Alignment.centerLeft,
@@ -210,7 +208,6 @@ class _Bubble extends StatelessWidget {
       );
     }
 
-    // Meeting: the sender's avatar and name beside the bubble.
     final name = (message.senderName?.isNotEmpty ?? false)
         ? message.senderName!
         : CallCode.format(message.senderId);
