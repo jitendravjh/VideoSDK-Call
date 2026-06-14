@@ -23,6 +23,10 @@ const users = new Map();
 const socketByUser = new Map();
 // userId -> peerUserId, tracks the other party once a call is offered
 const activeCalls = new Map();
+// roomCode -> Set<userId>. The room code is the host's user code.
+const rooms = new Map();
+// userId -> roomCode the user is currently in
+const roomByUser = new Map();
 
 // Human-typable code charset, omitting easily confused characters (0/O, 1/I/L).
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -70,6 +74,37 @@ function clearCall(userId) {
     activeCalls.delete(peer);
   }
   return peer;
+}
+
+// The members of a room as {userId, displayName}, resolving live display names.
+function meetingMembers(roomCode) {
+  const set = rooms.get(roomCode);
+  if (!set) return [];
+  return [...set].map((uid) => {
+    const socketId = socketByUser.get(uid);
+    const record = socketId ? users.get(socketId) : undefined;
+    return {
+      userId: uid,
+      displayName: record ? record.displayName : uid,
+    };
+  });
+}
+
+// Removes a user from their room and tells the remaining members. Deletes the
+// room once empty. Safe to call for a user who is not in any room.
+function leaveRoom(userId) {
+  const roomCode = roomByUser.get(userId);
+  if (!roomCode) return;
+  roomByUser.delete(userId);
+  const set = rooms.get(roomCode);
+  if (!set) return;
+  set.delete(userId);
+  for (const member of set) {
+    relayTo(member, 'meeting-peer-left', { roomCode, userId });
+  }
+  if (set.size === 0) {
+    rooms.delete(roomCode);
+  }
 }
 
 io.on('connection', (socket) => {
@@ -155,6 +190,73 @@ io.on('connection', (socket) => {
     relayTo(to, 'call-end', { from, to });
   });
 
+  // The host opens a room keyed by their own code; others join with that code.
+  socket.on('meeting-host', () => {
+    const user = users.get(socket.id);
+    if (!user) return;
+    const { userId } = user;
+    leaveRoom(userId);
+    rooms.set(userId, new Set([userId]));
+    roomByUser.set(userId, userId);
+    socket.emit('meeting-joined', { roomCode: userId, peers: [] });
+    console.log(`meeting-host ${userId}`);
+  });
+
+  socket.on('meeting-join', (data) => {
+    const user = users.get(socket.id);
+    if (!user) return;
+    const { userId } = user;
+    const roomCode = typeof data?.roomCode === 'string' ? data.roomCode : '';
+    const set = rooms.get(roomCode);
+    if (!set) {
+      socket.emit('meeting-error', { reason: 'no-such-meeting' });
+      return;
+    }
+    leaveRoom(userId);
+    // Existing members are sent to the joiner so it can establish a connection
+    // to each; the joiner is then announced to those members.
+    const peers = meetingMembers(roomCode).filter((p) => p.userId !== userId);
+    set.add(userId);
+    roomByUser.set(userId, roomCode);
+    socket.emit('meeting-joined', { roomCode, peers });
+    for (const member of set) {
+      if (member !== userId) {
+        relayTo(member, 'meeting-peer-joined', {
+          roomCode,
+          user: { userId, displayName: user.displayName },
+        });
+      }
+    }
+    console.log(`meeting-join ${userId} -> ${roomCode}`);
+  });
+
+  socket.on('meeting-leave', () => {
+    const user = users.get(socket.id);
+    if (user) leaveRoom(user.userId);
+  });
+
+  // Mesh per-pair signalling: stateless userId-addressed relays with no
+  // busy-guard, so one participant can negotiate with many peers at once.
+  socket.on('meeting-offer', (data) => {
+    const { from, to, sdp } = data ?? {};
+    if (!from || !to) return;
+    const fromName = users.get(socket.id)?.displayName;
+    relayTo(to, 'meeting-offer', { from, to, sdp, fromName });
+  });
+
+  socket.on('meeting-answer', (data) => {
+    const { from, to, sdp } = data ?? {};
+    if (!from || !to) return;
+    const fromName = users.get(socket.id)?.displayName;
+    relayTo(to, 'meeting-answer', { from, to, sdp, fromName });
+  });
+
+  socket.on('meeting-ice', (data) => {
+    const { from, to, candidate } = data ?? {};
+    if (!from || !to) return;
+    relayTo(to, 'meeting-ice', { from, to, candidate });
+  });
+
   socket.on('disconnect', () => {
     const user = users.get(socket.id);
     if (!user) return;
@@ -171,6 +273,9 @@ io.on('connection', (socket) => {
     if (peer) {
       relayTo(peer, 'call-end', { from: userId, to: peer, reason: 'peer-left' });
     }
+
+    // Drop out of any meeting and tell the remaining members.
+    leaveRoom(userId);
 
     io.emit('user-left', { userId });
     console.log(`disconnect ${displayName} (${userId})`);

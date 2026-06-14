@@ -227,7 +227,17 @@ class CallController extends _$CallController {
           UserJoinedMessage() ||
           UserLeftMessage() ||
           RegisterMessage() ||
-          RegisteredMessage():
+          RegisteredMessage() ||
+          MeetingHostMessage() ||
+          MeetingJoinMessage() ||
+          MeetingLeaveMessage() ||
+          MeetingJoinedMessage() ||
+          MeetingPeerJoinedMessage() ||
+          MeetingPeerLeftMessage() ||
+          MeetingErrorMessage() ||
+          MeetingOfferMessage() ||
+          MeetingAnswerMessage() ||
+          MeetingIceMessage():
         break;
     }
   }

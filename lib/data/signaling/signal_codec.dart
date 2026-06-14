@@ -57,6 +57,71 @@ class SignalCodec {
           'reason': ?reason,
         },
       ),
+      MeetingHostMessage() => (
+        event: SignalEvents.meetingHost,
+        payload: <String, dynamic>{},
+      ),
+      MeetingJoinMessage(:final roomCode) => (
+        event: SignalEvents.meetingJoin,
+        payload: {'roomCode': roomCode},
+      ),
+      MeetingLeaveMessage(:final roomCode) => (
+        event: SignalEvents.meetingLeave,
+        payload: {'roomCode': roomCode},
+      ),
+      MeetingJoinedMessage(:final roomCode, :final peers) => (
+        event: SignalEvents.meetingJoined,
+        payload: {
+          'roomCode': roomCode,
+          'peers': peers.map((u) => u.toJson()).toList(),
+        },
+      ),
+      MeetingPeerJoinedMessage(:final roomCode, :final user) => (
+        event: SignalEvents.meetingPeerJoined,
+        payload: {'roomCode': roomCode, 'user': user.toJson()},
+      ),
+      MeetingPeerLeftMessage(:final roomCode, :final userId) => (
+        event: SignalEvents.meetingPeerLeft,
+        payload: {'roomCode': roomCode, 'userId': userId},
+      ),
+      MeetingErrorMessage(:final reason) => (
+        event: SignalEvents.meetingError,
+        payload: {'reason': reason},
+      ),
+      MeetingOfferMessage(
+        :final from,
+        :final to,
+        :final sdp,
+        :final fromName,
+      ) =>
+        (
+          event: SignalEvents.meetingOffer,
+          payload: {
+            'from': from,
+            'to': to,
+            'sdp': sdp,
+            'fromName': ?fromName,
+          },
+        ),
+      MeetingAnswerMessage(
+        :final from,
+        :final to,
+        :final sdp,
+        :final fromName,
+      ) =>
+        (
+          event: SignalEvents.meetingAnswer,
+          payload: {
+            'from': from,
+            'to': to,
+            'sdp': sdp,
+            'fromName': ?fromName,
+          },
+        ),
+      MeetingIceMessage(:final from, :final to, :final candidate) => (
+        event: SignalEvents.meetingIce,
+        payload: {'from': from, 'to': to, 'candidate': candidate.toJson()},
+      ),
     };
   }
 
@@ -116,6 +181,49 @@ class SignalCodec {
           from: json['from'] as String,
           to: json['to'] as String,
           reason: json['reason'] as String?,
+        ),
+        SignalEvents.meetingHost => const SignalMessage.meetingHost(),
+        SignalEvents.meetingJoin => SignalMessage.meetingJoin(
+          roomCode: json['roomCode'] as String,
+        ),
+        SignalEvents.meetingLeave => SignalMessage.meetingLeave(
+          roomCode: json['roomCode'] as String,
+        ),
+        SignalEvents.meetingJoined => SignalMessage.meetingJoined(
+          roomCode: json['roomCode'] as String,
+          peers: (json['peers'] as List)
+              .map((e) => User.fromJson(Map<String, dynamic>.from(e as Map)))
+              .toList(),
+        ),
+        SignalEvents.meetingPeerJoined => SignalMessage.meetingPeerJoined(
+          roomCode: json['roomCode'] as String,
+          user: User.fromJson(Map<String, dynamic>.from(json['user'] as Map)),
+        ),
+        SignalEvents.meetingPeerLeft => SignalMessage.meetingPeerLeft(
+          roomCode: json['roomCode'] as String,
+          userId: json['userId'] as String,
+        ),
+        SignalEvents.meetingError => SignalMessage.meetingError(
+          reason: json['reason'] as String,
+        ),
+        SignalEvents.meetingOffer => SignalMessage.meetingOffer(
+          from: json['from'] as String,
+          to: json['to'] as String,
+          sdp: json['sdp'] as String,
+          fromName: json['fromName'] as String?,
+        ),
+        SignalEvents.meetingAnswer => SignalMessage.meetingAnswer(
+          from: json['from'] as String,
+          to: json['to'] as String,
+          sdp: json['sdp'] as String,
+          fromName: json['fromName'] as String?,
+        ),
+        SignalEvents.meetingIce => SignalMessage.meetingIce(
+          from: json['from'] as String,
+          to: json['to'] as String,
+          candidate: IceCandidatePayload.fromJson(
+            Map<String, dynamic>.from(json['candidate'] as Map),
+          ),
         ),
         _ => null,
       };

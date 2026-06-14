@@ -55,6 +55,40 @@ void main() {
       ),
       SignalMessage.callEnd(from: 'A1', to: 'B2'),
       SignalMessage.callEnd(from: 'A1', to: 'B2', reason: 'peer-left'),
+      SignalMessage.meetingHost(),
+      SignalMessage.meetingJoin(roomCode: 'HOST01'),
+      SignalMessage.meetingLeave(roomCode: 'HOST01'),
+      SignalMessage.meetingJoined(
+        roomCode: 'HOST01',
+        peers: [
+          User(userId: 'A1', displayName: 'Alice'),
+          User(userId: 'C3', displayName: 'Carol'),
+        ],
+      ),
+      SignalMessage.meetingPeerJoined(
+        roomCode: 'HOST01',
+        user: User(userId: 'D4', displayName: 'Dave'),
+      ),
+      SignalMessage.meetingPeerLeft(roomCode: 'HOST01', userId: 'D4'),
+      SignalMessage.meetingError(reason: 'no-such-meeting'),
+      SignalMessage.meetingOffer(from: 'A1', to: 'C3', sdp: 'sdp-mo'),
+      SignalMessage.meetingOffer(
+        from: 'A1',
+        to: 'C3',
+        sdp: 'sdp-mo',
+        fromName: 'Alice',
+      ),
+      SignalMessage.meetingAnswer(
+        from: 'C3',
+        to: 'A1',
+        sdp: 'sdp-ma',
+        fromName: 'Carol',
+      ),
+      SignalMessage.meetingIce(
+        from: 'A1',
+        to: 'C3',
+        candidate: IceCandidatePayload(candidate: 'candidate:2'),
+      ),
     ];
 
     messages.asMap().forEach((index, message) {
