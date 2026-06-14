@@ -15,6 +15,7 @@ import 'package:meet_videosdk/data/webrtc/webrtc_providers.dart';
 import 'package:meet_videosdk/presentation/call/call_controls.dart';
 import 'package:meet_videosdk/presentation/call/chat_sheet.dart';
 import 'package:meet_videosdk/presentation/call/mic_level_bar.dart';
+import 'package:meet_videosdk/presentation/common/back_home_button.dart';
 import 'package:meet_videosdk/presentation/common/connection_banner.dart';
 import 'package:meet_videosdk/presentation/common/user_avatar.dart';
 import 'package:meet_videosdk/presentation/prejoin/prejoin_screen.dart';
@@ -232,7 +233,7 @@ class _PendingView extends StatelessWidget {
           Text(peer.displayName, style: theme.textTheme.headlineSmall),
           const SizedBox(height: 6),
           Text(
-            'Code ${CallCode.format(peer.userId)}',
+            CallCode.format(peer.userId),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -320,7 +321,7 @@ class _ConnectedView extends ConsumerWidget {
                   Text(peer.displayName, style: theme.textTheme.headlineSmall),
                   const SizedBox(height: 6),
                   Text(
-                    'Code ${CallCode.format(peer.userId)}',
+                    CallCode.format(peer.userId),
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -359,7 +360,7 @@ class _ConnectedView extends ConsumerWidget {
                     ],
                   ),
                   Text(
-                    'Code ${CallCode.format(peer.userId)}',
+                    CallCode.format(peer.userId),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: Colors.white70,
                     ),
@@ -487,10 +488,7 @@ class _TerminalView extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 24),
-          OutlinedButton(
-            onPressed: onDone,
-            child: const Text('Back to home'),
-          ),
+          BackHomeButton(onPressed: onDone),
         ],
       ),
     );

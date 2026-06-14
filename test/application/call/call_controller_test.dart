@@ -119,7 +119,7 @@ void main() {
 
     final state = read();
     expect(state, isA<Ended>());
-    expect((state as Ended).reason, 'Peer left the call');
+    expect((state as Ended).reason, 'User left the call');
   });
 
   test('remote ICE candidates are forwarded to the engine', () async {

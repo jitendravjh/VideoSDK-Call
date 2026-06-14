@@ -153,5 +153,12 @@ class SignalingService implements SignalingTransport {
     SignalEvents.callDecline,
     SignalEvents.iceCandidate,
     SignalEvents.callEnd,
+    SignalEvents.meetingJoined,
+    SignalEvents.meetingPeerJoined,
+    SignalEvents.meetingPeerLeft,
+    SignalEvents.meetingError,
+    SignalEvents.meetingOffer,
+    SignalEvents.meetingAnswer,
+    SignalEvents.meetingIce,
   ];
 }

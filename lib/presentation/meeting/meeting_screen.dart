@@ -10,6 +10,7 @@ import 'package:meet_videosdk/core/permissions.dart';
 import 'package:meet_videosdk/data/models/meeting_state.dart';
 import 'package:meet_videosdk/data/webrtc/webrtc_providers.dart';
 import 'package:meet_videosdk/presentation/call/call_controls.dart';
+import 'package:meet_videosdk/presentation/common/back_home_button.dart';
 import 'package:meet_videosdk/presentation/common/user_avatar.dart';
 
 /// The in-meeting screen: a grid of the local preview plus every participant,
@@ -181,7 +182,7 @@ class _TerminalScaffold extends StatelessWidget {
               const SizedBox(height: 16),
               Text(reason, style: theme.textTheme.titleMedium),
               const SizedBox(height: 24),
-              TextButton(onPressed: onDone, child: const Text('Back to home')),
+              BackHomeButton(onPressed: onDone),
             ],
           ),
         ),

@@ -8,7 +8,12 @@ part 'lobby_controller.g.dart';
 
 /// Maintains the live list of online peers by folding presence messages
 /// through [PresenceReducer]. Excludes the local user.
-@riverpod
+///
+/// Kept alive so the roster survives navigating away from the lobby (into a
+/// call or meeting) and back: an auto-disposed controller would drop its
+/// presence subscription on leaving and come back empty, making everyone look
+/// offline until the next register event.
+@Riverpod(keepAlive: true)
 class LobbyController extends _$LobbyController {
   @override
   List<User> build() {

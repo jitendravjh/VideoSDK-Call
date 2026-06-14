@@ -169,7 +169,7 @@ class _PrejoinScreenState extends ConsumerState<PrejoinScreen>
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Code ${CallCode.format(widget.peer.userId)}',
+                                  CallCode.format(widget.peer.userId),
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: theme.colorScheme.onSurfaceVariant,
                                   ),

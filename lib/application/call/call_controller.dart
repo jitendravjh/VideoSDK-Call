@@ -451,7 +451,7 @@ class CallController extends _$CallController {
   String _reasonLabel(String? reason) => switch (reason) {
     'offline' => 'User is offline',
     'busy' => 'User is busy',
-    'peer-left' => 'Peer left the call',
+    'peer-left' => 'User left the call',
     _ => 'Call ended',
   };
 }
