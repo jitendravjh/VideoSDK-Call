@@ -71,8 +71,16 @@ class _MeetingScreenState extends ConsumerState<MeetingScreen> {
       }
       return;
     }
-    await _meeting.enableCamera();
-    if (mounted) setState(() => _cameraOn = true);
+    try {
+      await _meeting.enableCamera();
+      if (mounted) setState(() => _cameraOn = true);
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not start the camera')),
+        );
+      }
+    }
   }
 
   @override

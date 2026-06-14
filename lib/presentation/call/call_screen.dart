@@ -109,8 +109,16 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       }
       return;
     }
-    await notifier.enableCamera();
-    if (mounted) setState(() => _cameraOn = true);
+    try {
+      await notifier.enableCamera();
+      if (mounted) setState(() => _cameraOn = true);
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not start the camera')),
+        );
+      }
+    }
   }
 
   void _handleBack(CallState state) {
