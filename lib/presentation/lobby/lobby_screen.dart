@@ -7,7 +7,9 @@ import 'package:go_router/go_router.dart';
 import 'package:meet_videosdk/application/history/call_history_controller.dart';
 import 'package:meet_videosdk/application/lobby/lobby_controller.dart';
 import 'package:meet_videosdk/application/lobby/session_controller.dart';
+import 'package:meet_videosdk/application/meeting/meeting_controller.dart';
 import 'package:meet_videosdk/core/call_code.dart';
+import 'package:meet_videosdk/core/permissions.dart';
 import 'package:meet_videosdk/data/models/user.dart';
 import 'package:meet_videosdk/presentation/common/app_router.dart';
 import 'package:meet_videosdk/presentation/common/brand_logo.dart';
@@ -73,7 +75,7 @@ class LobbyScreen extends ConsumerWidget {
                     Expanded(
                       child: FilledButton.tonalIcon(
                         onPressed: (self != null && self.userId.isNotEmpty)
-                            ? () => context.push(AppRoutes.meetingLobby)
+                            ? () => _showMeetingDialog(context, ref, self)
                             : null,
                         icon: const Icon(Icons.groups),
                         label: const Text('Meeting'),
@@ -160,6 +162,39 @@ class LobbyScreen extends ConsumerWidget {
     }
     final peer = _resolvePeer(ref, normalized);
     _startCall(context, peer);
+  }
+
+  Future<void> _showMeetingDialog(
+    BuildContext context,
+    WidgetRef ref,
+    User self,
+  ) async {
+    final meeting = ref.read(meetingControllerProvider.notifier);
+    final result = await showDialog<({String action, String code})>(
+      context: context,
+      builder: (context) => _MeetingDialog(code: self.userId),
+    );
+    if (result == null || !context.mounted) return;
+
+    // Meetings have no pre-join screen, so request the mic here; the camera is
+    // requested only if the user turns it on mid-meeting.
+    const permissions = MediaPermissions();
+    final granted = await permissions.request(camera: false);
+    if (granted != MediaPermissionResult.granted) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Microphone permission is required')),
+        );
+      }
+      return;
+    }
+
+    if (result.action == 'host') {
+      await meeting.host();
+    } else {
+      final code = CallCode.normalize(result.code);
+      if (code.isNotEmpty) await meeting.join(code);
+    }
   }
 
   User _resolvePeer(WidgetRef ref, String code) {
@@ -295,7 +330,6 @@ class _JoinDialogState extends State<_JoinDialog> {
       title: const Text('Join with a code'),
       content: TextField(
         controller: _controller,
-        autofocus: true,
         textCapitalization: TextCapitalization.characters,
         textInputAction: TextInputAction.go,
         decoration: const InputDecoration(
@@ -313,6 +347,104 @@ class _JoinDialogState extends State<_JoinDialog> {
           onPressed: _submit,
           child: const Text('Connect'),
         ),
+      ],
+    );
+  }
+}
+
+/// Popup for group meetings: shows the user's shareable meeting code with a
+/// Host button, and a field to join an existing meeting by code. Pops a record
+/// describing the chosen action; the lobby then requests permission and drives
+/// the meeting controller.
+class _MeetingDialog extends StatefulWidget {
+  const _MeetingDialog({required this.code});
+
+  final String code;
+
+  @override
+  State<_MeetingDialog> createState() => _MeetingDialogState();
+}
+
+class _MeetingDialogState extends State<_MeetingDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _host() => Navigator.of(context).pop((action: 'host', code: ''));
+
+  void _join() =>
+      Navigator.of(context).pop((action: 'join', code: _controller.text));
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final ready = widget.code.isNotEmpty;
+    return AlertDialog(
+      title: const Text('Meeting'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'YOUR MEETING CODE',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+              letterSpacing: 1.4,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            ready ? CallCode.format(widget.code) : '------',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: 3,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Host, then share this code so others can join.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: ready ? _host : null,
+            icon: const Icon(Icons.groups),
+            label: const Text('Host meeting'),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Or join a meeting',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _controller,
+            textCapitalization: TextCapitalization.characters,
+            textInputAction: TextInputAction.go,
+            decoration: const InputDecoration(
+              hintText: 'Enter meeting code',
+              prefixIcon: Icon(Icons.dialpad),
+            ),
+            onSubmitted: (_) => _join(),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(onPressed: _join, child: const Text('Join')),
       ],
     );
   }

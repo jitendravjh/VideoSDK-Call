@@ -9,7 +9,6 @@ import 'package:meet_videosdk/data/models/user.dart';
 import 'package:meet_videosdk/presentation/call/call_screen.dart';
 import 'package:meet_videosdk/presentation/lobby/lobby_screen.dart';
 import 'package:meet_videosdk/presentation/lobby/sign_in_screen.dart';
-import 'package:meet_videosdk/presentation/meeting/meeting_lobby_screen.dart';
 import 'package:meet_videosdk/presentation/meeting/meeting_screen.dart';
 import 'package:meet_videosdk/presentation/prejoin/prejoin_screen.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -23,7 +22,6 @@ class AppRoutes {
   static const String lobby = '/lobby';
   static const String prejoin = '/prejoin';
   static const String call = '/call';
-  static const String meetingLobby = '/meeting-lobby';
   static const String meeting = '/meeting';
 }
 
@@ -81,10 +79,6 @@ GoRouter router(Ref ref) {
       GoRoute(
         path: AppRoutes.call,
         builder: (context, state) => const CallScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.meetingLobby,
-        builder: (context, state) => const MeetingLobbyScreen(),
       ),
       GoRoute(
         path: AppRoutes.meeting,
