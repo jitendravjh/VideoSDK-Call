@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:meet_videosdk/application/call/call_controller.dart';
+import 'package:meet_videosdk/core/call_code.dart';
 import 'package:meet_videosdk/core/permissions.dart';
 import 'package:meet_videosdk/data/models/user.dart';
 import 'package:meet_videosdk/data/webrtc/webrtc_providers.dart';
@@ -163,8 +164,20 @@ class _PrejoinScreenState extends ConsumerState<PrejoinScreen>
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
+                                  widget.peer.displayName,
+                                  style: theme.textTheme.titleMedium,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Code ${CallCode.format(widget.peer.userId)}',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
                                   _cameraOn ? 'Starting camera' : 'Camera off',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                  style: theme.textTheme.bodySmall?.copyWith(
                                     color: theme.colorScheme.onSurfaceVariant,
                                   ),
                                 ),

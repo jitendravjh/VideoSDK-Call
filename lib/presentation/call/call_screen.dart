@@ -6,6 +6,7 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:meet_videosdk/application/call/call_controller.dart';
 import 'package:meet_videosdk/application/call/chat_controller.dart';
 import 'package:meet_videosdk/application/call/remote_media_controller.dart';
+import 'package:meet_videosdk/core/call_code.dart';
 import 'package:meet_videosdk/core/formatting.dart';
 import 'package:meet_videosdk/data/models/call_state.dart';
 import 'package:meet_videosdk/data/models/user.dart';
@@ -204,6 +205,13 @@ class _PendingView extends StatelessWidget {
           UserAvatar(name: peer.displayName, radius: 56),
           const SizedBox(height: 24),
           Text(peer.displayName, style: theme.textTheme.headlineSmall),
+          const SizedBox(height: 6),
+          Text(
+            'Code ${CallCode.format(peer.userId)}',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -286,6 +294,13 @@ class _ConnectedView extends ConsumerWidget {
                   UserAvatar(name: peer.displayName, radius: 56),
                   const SizedBox(height: 20),
                   Text(peer.displayName, style: theme.textTheme.headlineSmall),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Code ${CallCode.format(peer.userId)}',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                   if (!remoteMicOn) ...[
                     const SizedBox(height: 10),
                     const _MutedChip(onVideoBg: false),

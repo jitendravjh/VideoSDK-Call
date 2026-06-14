@@ -118,7 +118,10 @@ io.on('connection', (socket) => {
 
     activeCalls.set(from, to);
     activeCalls.set(to, from);
-    const delivered = relayTo(to, 'call-offer', { from, to, sdp });
+    // Attach the caller's trusted display name so the callee shows a real name
+    // even when the caller is not in the callee's presence list (join by code).
+    const fromName = users.get(socket.id)?.displayName;
+    const delivered = relayTo(to, 'call-offer', { from, to, sdp, fromName });
     if (!delivered) {
       clearCall(from);
       relayTo(from, 'call-end', { from: to, to: from, reason: 'offline' });
@@ -128,7 +131,8 @@ io.on('connection', (socket) => {
   socket.on('call-answer', (data) => {
     const { from, to, sdp } = data ?? {};
     if (!from || !to) return;
-    relayTo(to, 'call-answer', { from, to, sdp });
+    const fromName = users.get(socket.id)?.displayName;
+    relayTo(to, 'call-answer', { from, to, sdp, fromName });
   });
 
   socket.on('call-decline', (data) => {

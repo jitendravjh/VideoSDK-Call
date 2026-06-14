@@ -5,6 +5,7 @@ import 'package:meet_videosdk/application/call/remote_media_controller.dart';
 import 'package:meet_videosdk/application/history/call_history_controller.dart';
 import 'package:meet_videosdk/application/lobby/lobby_controller.dart';
 import 'package:meet_videosdk/application/lobby/session_controller.dart';
+import 'package:meet_videosdk/core/call_code.dart';
 import 'package:meet_videosdk/core/logging.dart';
 import 'package:meet_videosdk/data/models/call_record.dart';
 import 'package:meet_videosdk/data/models/call_state.dart';
@@ -70,7 +71,12 @@ class CallController extends _$CallController {
       await _engine.setupConnection(asCaller: true);
       final sdp = await _engine.createOffer();
       _signaling.send(
-        SignalMessage.offer(from: self.userId, to: peer.userId, sdp: sdp),
+        SignalMessage.offer(
+          from: self.userId,
+          to: peer.userId,
+          sdp: sdp,
+          fromName: self.displayName,
+        ),
       );
     } on Object catch (error, stackTrace) {
       _log.error('startCall failed', error, stackTrace);
@@ -97,7 +103,12 @@ class CallController extends _$CallController {
       await _engine.setRemoteDescription(offerSdp, 'offer');
       final answer = await _engine.createAnswer();
       _signaling.send(
-        SignalMessage.answer(from: self.userId, to: peer.userId, sdp: answer),
+        SignalMessage.answer(
+          from: self.userId,
+          to: peer.userId,
+          sdp: answer,
+          fromName: self.displayName,
+        ),
       );
     } on Object catch (error, stackTrace) {
       _log.error('acceptCall failed', error, stackTrace);
@@ -199,10 +210,10 @@ class CallController extends _$CallController {
 
   void _onSignal(SignalMessage message) {
     switch (message) {
-      case OfferMessage(:final from, :final sdp):
-        _onIncomingOffer(from, sdp);
-      case AnswerMessage(:final sdp):
-        unawaited(_onAnswer(sdp));
+      case OfferMessage(:final from, :final sdp, :final fromName):
+        _onIncomingOffer(from, sdp, fromName);
+      case AnswerMessage(:final sdp, :final fromName):
+        unawaited(_onAnswer(sdp, fromName));
       case DeclineMessage():
         _onDeclined();
       case IceCandidateMessage(:final from, :final candidate):
@@ -221,7 +232,7 @@ class CallController extends _$CallController {
     }
   }
 
-  void _onIncomingOffer(String from, String sdp) {
+  void _onIncomingOffer(String from, String sdp, String? fromName) {
     final self = _self;
     if (state is! Idle) {
       if (self != null) {
@@ -229,15 +240,25 @@ class CallController extends _$CallController {
       }
       return;
     }
-    final peer = _resolvePeer(from);
+    // Prefer the name carried on the offer (server-stamped) so a caller reached
+    // by code shows a real name rather than a code placeholder.
+    final peer = (fromName != null && fromName.isNotEmpty)
+        ? User(userId: from, displayName: fromName)
+        : _resolvePeer(from);
     _beginCall(peer, CallDirection.incoming);
     state = CallState.incoming(peer: peer, offerSdp: sdp);
   }
 
-  Future<void> _onAnswer(String sdp) async {
+  Future<void> _onAnswer(String sdp, String? fromName) async {
     final peer = state.peer;
     if (state is! Outgoing || peer == null) return;
-    state = CallState.connecting(peer: peer);
+    // The answer carries the callee's real name; adopt it so the caller stops
+    // showing the code placeholder it built at join-by-code time.
+    final resolved = (fromName != null && fromName.isNotEmpty)
+        ? peer.copyWith(displayName: fromName)
+        : peer;
+    _historyPeer = resolved;
+    state = CallState.connecting(peer: resolved);
     await _engine.setRemoteDescription(sdp, 'answer');
   }
 
@@ -355,7 +376,7 @@ class CallController extends _$CallController {
     final users = ref.read(lobbyControllerProvider);
     return users.firstWhere(
       (u) => u.userId == userId,
-      orElse: () => User(userId: userId, displayName: userId),
+      orElse: () => User(userId: userId, displayName: CallCode.format(userId)),
     );
   }
 

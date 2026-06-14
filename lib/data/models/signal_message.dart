@@ -32,12 +32,14 @@ sealed class SignalMessage with _$SignalMessage {
     required String from,
     required String to,
     required String sdp,
+    String? fromName,
   }) = OfferMessage;
 
   const factory SignalMessage.answer({
     required String from,
     required String to,
     required String sdp,
+    String? fromName,
   }) = AnswerMessage;
 
   const factory SignalMessage.decline({

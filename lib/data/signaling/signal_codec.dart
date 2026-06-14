@@ -33,13 +33,13 @@ class SignalCodec {
         event: SignalEvents.userLeft,
         payload: {'userId': userId},
       ),
-      OfferMessage(:final from, :final to, :final sdp) => (
+      OfferMessage(:final from, :final to, :final sdp, :final fromName) => (
         event: SignalEvents.callOffer,
-        payload: {'from': from, 'to': to, 'sdp': sdp},
+        payload: {'from': from, 'to': to, 'sdp': sdp, 'fromName': ?fromName},
       ),
-      AnswerMessage(:final from, :final to, :final sdp) => (
+      AnswerMessage(:final from, :final to, :final sdp, :final fromName) => (
         event: SignalEvents.callAnswer,
-        payload: {'from': from, 'to': to, 'sdp': sdp},
+        payload: {'from': from, 'to': to, 'sdp': sdp, 'fromName': ?fromName},
       ),
       DeclineMessage(:final from, :final to) => (
         event: SignalEvents.callDecline,
@@ -93,11 +93,13 @@ class SignalCodec {
           from: json['from'] as String,
           to: json['to'] as String,
           sdp: json['sdp'] as String,
+          fromName: json['fromName'] as String?,
         ),
         SignalEvents.callAnswer => SignalMessage.answer(
           from: json['from'] as String,
           to: json['to'] as String,
           sdp: json['sdp'] as String,
+          fromName: json['fromName'] as String?,
         ),
         SignalEvents.callDecline => SignalMessage.decline(
           from: json['from'] as String,

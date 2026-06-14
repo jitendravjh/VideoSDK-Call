@@ -30,7 +30,19 @@ void main() {
       ),
       SignalMessage.userLeft(userId: 'B2'),
       SignalMessage.offer(from: 'A1', to: 'B2', sdp: 'sdp-offer'),
+      SignalMessage.offer(
+        from: 'A1',
+        to: 'B2',
+        sdp: 'sdp-offer',
+        fromName: 'Alice',
+      ),
       SignalMessage.answer(from: 'B2', to: 'A1', sdp: 'sdp-answer'),
+      SignalMessage.answer(
+        from: 'B2',
+        to: 'A1',
+        sdp: 'sdp-answer',
+        fromName: 'Bob',
+      ),
       SignalMessage.decline(from: 'B2', to: 'A1'),
       SignalMessage.iceCandidate(
         from: 'A1',
@@ -45,11 +57,11 @@ void main() {
       SignalMessage.callEnd(from: 'A1', to: 'B2', reason: 'peer-left'),
     ];
 
-    for (final message in messages) {
-      test(message.runtimeType.toString(), () {
+    messages.asMap().forEach((index, message) {
+      test('$index ${message.runtimeType}', () {
         expect(roundTrip(message), message);
       });
-    }
+    });
   });
 
   group('decode is forgiving', () {
