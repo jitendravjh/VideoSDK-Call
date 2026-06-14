@@ -139,10 +139,18 @@ class MeetingController extends _$MeetingController {
   Future<void> setSpeakerphone({required bool enabled}) =>
       _engine.setSpeakerphone(enabled: enabled);
 
+  /// Sends a group chat message: relayed to every room member through the
+  /// signalling server (reliable for groups), with an immediate local echo.
   void sendChat(String text) {
     final self = _self;
+    final code = state.roomCode;
     final trimmed = text.trim();
-    if (self == null || self.userId.isEmpty || trimmed.isEmpty) return;
+    if (self == null ||
+        self.userId.isEmpty ||
+        code == null ||
+        trimmed.isEmpty) {
+      return;
+    }
     final message = ChatMessage(
       id: _uuid.v4(),
       senderId: self.userId,
@@ -150,7 +158,9 @@ class MeetingController extends _$MeetingController {
       text: trimmed,
       sentAt: DateTime.now(),
     );
-    _engine.sendChat(message);
+    _signaling.send(
+      SignalMessage.meetingChat(roomCode: code, message: message),
+    );
     ref.read(chatControllerProvider.notifier).add(message);
   }
 
@@ -179,6 +189,9 @@ class MeetingController extends _$MeetingController {
         unawaited(_engine.addRemoteCandidate(from, candidate));
       case MeetingErrorMessage(:final reason):
         unawaited(_onError(reason));
+      case MeetingChatMessage(:final message):
+        ref.read(chatControllerProvider.notifier).add(message);
+        ref.read(chatUnreadProvider.notifier).increment();
       case _:
         break;
     }
@@ -321,10 +334,6 @@ class MeetingController extends _$MeetingController {
             fromName: self.displayName,
           ),
         );
-      },
-      onChat: (message) {
-        ref.read(chatControllerProvider.notifier).add(message);
-        ref.read(chatUnreadProvider.notifier).increment();
       },
     );
   }

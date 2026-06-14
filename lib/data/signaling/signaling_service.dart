@@ -160,5 +160,6 @@ class SignalingService implements SignalingTransport {
     SignalEvents.meetingOffer,
     SignalEvents.meetingAnswer,
     SignalEvents.meetingIce,
+    SignalEvents.meetingChat,
   ];
 }

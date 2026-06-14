@@ -2,8 +2,6 @@ import 'dart:async';
 
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:meet_videosdk/core/constants.dart';
-import 'package:meet_videosdk/core/logging.dart';
-import 'package:meet_videosdk/data/models/chat_message.dart';
 import 'package:meet_videosdk/data/models/ice_candidate_payload.dart';
 import 'package:meet_videosdk/data/webrtc/data_channel_codec.dart';
 import 'package:meet_videosdk/data/webrtc/mesh_engine.dart';
@@ -25,8 +23,6 @@ class _PeerLink {
 /// capture is owned here and is never released by a single peer's teardown.
 class MeshService implements MeshEngine {
   MeshService();
-
-  final AppLogger _log = AppLogger('MeshService');
 
   @override
   final RTCVideoRenderer localRenderer = RTCVideoRenderer();
@@ -55,7 +51,6 @@ class MeshService implements MeshEngine {
   void Function(String peerId, {required bool cameraOn, required bool micOn})?
   _onRemoteMediaState;
   void Function(String peerId, String sdp)? _onRenegotiate;
-  void Function(ChatMessage message)? _onChat;
 
   @override
   bool get hasVideo => _localStream?.getVideoTracks().isNotEmpty ?? false;
@@ -71,7 +66,6 @@ class MeshService implements MeshEngine {
     void Function(String peerId, {required bool cameraOn, required bool micOn})?
     onRemoteMediaState,
     void Function(String peerId, String sdp)? onRenegotiate,
-    void Function(ChatMessage message)? onChat,
   }) {
     _onLocalCandidate = onLocalCandidate;
     _onConnected = onConnected;
@@ -80,7 +74,6 @@ class MeshService implements MeshEngine {
     _onRemoteVideo = onRemoteVideo;
     _onRemoteMediaState = onRemoteMediaState;
     _onRenegotiate = onRenegotiate;
-    _onChat = onChat;
   }
 
   @override
@@ -345,13 +338,6 @@ class MeshService implements MeshEngine {
     );
   }
 
-  @override
-  void sendChat(ChatMessage message) {
-    final open = _peers.values.where((l) => l.channel != null).length;
-    _log.info('sendChat to $open/${_peers.length} open channels');
-    _broadcast(DataChannelCodec.encodeChat(message));
-  }
-
   void _broadcast(String payload) {
     for (final link in _peers.values) {
       final channel = link.channel;
@@ -380,7 +366,6 @@ class MeshService implements MeshEngine {
     _onRemoteVideo = null;
     _onRemoteMediaState = null;
     _onRenegotiate = null;
-    _onChat = null;
     if (_localRendererInitialized) {
       await localRenderer.dispose();
       _localRendererInitialized = false;
@@ -392,18 +377,17 @@ class MeshService implements MeshEngine {
     channel
       ..onDataChannelState = (state) {
         if (state == RTCDataChannelState.RTCDataChannelOpen) {
-          _log.info('data channel open for $peerId');
           _onChannelOpen?.call(peerId);
         }
       }
       ..onMessage = (message) {
+        // The mesh data channel now carries media-state only; chat goes through
+        // the signalling server (see MeetingController).
         final decoded = DataChannelCodec.decode(message.text);
         switch (decoded) {
           case MediaStateData(:final cameraOn, :final micOn):
             _onRemoteMediaState?.call(peerId, cameraOn: cameraOn, micOn: micOn);
-          case ChatData(:final message):
-            _log.info('chat received from ${message.senderId}');
-            _onChat?.call(message);
+          case ChatData():
           case null:
             break;
         }

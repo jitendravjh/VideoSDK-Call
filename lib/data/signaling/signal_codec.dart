@@ -1,3 +1,4 @@
+import 'package:meet_videosdk/data/models/chat_message.dart';
 import 'package:meet_videosdk/data/models/ice_candidate_payload.dart';
 import 'package:meet_videosdk/data/models/signal_message.dart';
 import 'package:meet_videosdk/data/models/user.dart';
@@ -122,6 +123,10 @@ class SignalCodec {
         event: SignalEvents.meetingIce,
         payload: {'from': from, 'to': to, 'candidate': candidate.toJson()},
       ),
+      MeetingChatMessage(:final roomCode, :final message) => (
+        event: SignalEvents.meetingChat,
+        payload: {'roomCode': roomCode, 'message': message.toJson()},
+      ),
     };
   }
 
@@ -223,6 +228,12 @@ class SignalCodec {
           to: json['to'] as String,
           candidate: IceCandidatePayload.fromJson(
             Map<String, dynamic>.from(json['candidate'] as Map),
+          ),
+        ),
+        SignalEvents.meetingChat => SignalMessage.meetingChat(
+          roomCode: json['roomCode'] as String,
+          message: ChatMessage.fromJson(
+            Map<String, dynamic>.from(json['message'] as Map),
           ),
         ),
         _ => null,

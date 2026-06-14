@@ -9,23 +9,27 @@ import 'package:meet_videosdk/data/models/chat_message.dart';
 import 'package:meet_videosdk/presentation/common/user_avatar.dart';
 
 /// Shows the shared chat transcript. [onSend] forwards the typed text to the
-/// active controller (1:1 call or meeting), so one sheet serves both.
+/// active controller (1:1 call or meeting), so one sheet serves both. When
+/// [showSender] is true (group meetings) incoming messages show the sender's
+/// avatar and name; in a 1:1 call they stay plain.
 Future<void> showChatSheet(
   BuildContext context, {
   required ValueChanged<String> onSend,
+  bool showSender = false,
 }) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (_) => ChatSheet(onSend: onSend),
+    builder: (_) => ChatSheet(onSend: onSend, showSender: showSender),
   );
 }
 
 class ChatSheet extends ConsumerStatefulWidget {
-  const ChatSheet({required this.onSend, super.key});
+  const ChatSheet({required this.onSend, this.showSender = false, super.key});
 
   final ValueChanged<String> onSend;
+  final bool showSender;
 
   @override
   ConsumerState<ChatSheet> createState() => _ChatSheetState();
@@ -115,6 +119,7 @@ class _ChatSheetState extends ConsumerState<ChatSheet> {
                       itemBuilder: (context, index) => _Bubble(
                         message: messages[index],
                         isMine: messages[index].senderId == selfId,
+                        showSender: widget.showSender,
                       ),
                     ),
             ),
@@ -151,10 +156,15 @@ class _ChatSheetState extends ConsumerState<ChatSheet> {
 }
 
 class _Bubble extends StatelessWidget {
-  const _Bubble({required this.message, required this.isMine});
+  const _Bubble({
+    required this.message,
+    required this.isMine,
+    required this.showSender,
+  });
 
   final ChatMessage message;
   final bool isMine;
+  final bool showSender;
 
   @override
   Widget build(BuildContext context) {
@@ -165,11 +175,12 @@ class _Bubble extends StatelessWidget {
     final textColor = isMine
         ? theme.colorScheme.onPrimary
         : theme.colorScheme.onSurface;
+    final width = MediaQuery.of(context).size.width;
 
     final bubble = Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       constraints: BoxConstraints(
-        maxWidth: MediaQuery.of(context).size.width * 0.66,
+        maxWidth: width * (showSender && !isMine ? 0.62 : 0.72),
       ),
       decoration: BoxDecoration(
         color: color,
@@ -178,8 +189,6 @@ class _Bubble extends StatelessWidget {
       child: Text(message.text, style: TextStyle(color: textColor)),
     );
 
-    // Own messages: a right-aligned bubble. Incoming: the sender's avatar and
-    // name beside the bubble so group chat shows who said what.
     if (isMine) {
       return Align(
         alignment: Alignment.centerRight,
@@ -190,6 +199,18 @@ class _Bubble extends StatelessWidget {
       );
     }
 
+    // 1:1 call: a plain left-aligned bubble, exactly like before.
+    if (!showSender) {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 8, right: 40),
+          child: bubble,
+        ),
+      );
+    }
+
+    // Meeting: the sender's avatar and name beside the bubble.
     final name = (message.senderName?.isNotEmpty ?? false)
         ? message.senderName!
         : CallCode.format(message.senderId);

@@ -279,6 +279,30 @@ io.on('connection', (socket) => {
     relayTo(to, 'meeting-ice', { from, to, candidate });
   });
 
+  // Group chat is relayed through the room rather than peer data channels, so it
+  // reaches everyone reliably. The sender's id/name are stamped from the trusted
+  // user record so they cannot be spoofed.
+  socket.on('meeting-chat', (data) => {
+    const user = users.get(socket.id);
+    if (!user) return;
+    const roomCode = roomByUser.get(user.userId);
+    if (!roomCode) return;
+    const set = rooms.get(roomCode);
+    if (!set) return;
+    const incoming = data?.message;
+    if (!incoming || typeof incoming.text !== 'string') return;
+    const message = {
+      ...incoming,
+      senderId: user.userId,
+      senderName: user.displayName,
+    };
+    for (const member of set) {
+      if (member !== user.userId) {
+        relayTo(member, 'meeting-chat', { roomCode, message });
+      }
+    }
+  });
+
   socket.on('disconnect', () => {
     const user = users.get(socket.id);
     if (!user) return;

@@ -194,15 +194,20 @@ void main() {
     await _pump();
 
     notifier().sendChat('hello team');
+    // Local echo into the shared transcript, and relayed via the server.
     final messages = container.read(chatControllerProvider);
     expect(messages, hasLength(1));
     expect(messages.single.text, 'hello team');
     expect(messages.single.senderId, 'ALICE1');
     expect(messages.single.senderName, 'Alice');
+    final sent = signaling.sent.whereType<MeetingChatMessage>().toList();
+    expect(sent, hasLength(1));
+    expect(sent.single.roomCode, 'MEET01');
+    expect(sent.single.message.text, 'hello team');
   });
 
   test(
-    'an incoming chat is added to the transcript and bumps unread',
+    'an incoming meeting-chat is added to the transcript and bumps unread',
     () async {
       await notifier().host();
       signaling.emit(
@@ -210,18 +215,23 @@ void main() {
       );
       await _pump();
 
-      mesh.fireChat(
-        ChatMessage(
-          id: 'm1',
-          senderId: 'BOBBB2',
-          senderName: 'Bob',
-          text: 'hi all',
-          sentAt: DateTime(2026),
+      signaling.emit(
+        SignalMessage.meetingChat(
+          roomCode: 'MEET01',
+          message: ChatMessage(
+            id: 'm1',
+            senderId: 'BOBBB2',
+            senderName: 'Bob',
+            text: 'hi all',
+            sentAt: DateTime(2026),
+          ),
         ),
       );
       await _pump();
 
-      expect(container.read(chatControllerProvider).single.text, 'hi all');
+      final messages = container.read(chatControllerProvider);
+      expect(messages.single.text, 'hi all');
+      expect(messages.single.senderName, 'Bob');
       expect(container.read(chatUnreadProvider), 1);
     },
   );
@@ -283,10 +293,8 @@ class _FakeMesh implements MeshEngine {
   bool closed = false;
 
   void Function(String peerId)? _onConnected;
-  void Function(ChatMessage message)? _onChat;
 
   void fireConnected(String peerId) => _onConnected?.call(peerId);
-  void fireChat(ChatMessage message) => _onChat?.call(message);
 
   @override
   RTCVideoRenderer get localRenderer => throw UnimplementedError();
@@ -305,10 +313,8 @@ class _FakeMesh implements MeshEngine {
     void Function(String peerId, {required bool cameraOn, required bool micOn})?
     onRemoteMediaState,
     void Function(String peerId, String sdp)? onRenegotiate,
-    void Function(ChatMessage message)? onChat,
   }) {
     _onConnected = onConnected;
-    _onChat = onChat;
   }
 
   @override
@@ -378,9 +384,6 @@ class _FakeMesh implements MeshEngine {
 
   @override
   void broadcastMediaState({required bool cameraOn, required bool micOn}) {}
-
-  @override
-  void sendChat(ChatMessage message) {}
 
   @override
   Future<void> closeAll() async {

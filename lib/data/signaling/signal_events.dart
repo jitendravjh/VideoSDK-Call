@@ -26,4 +26,5 @@ class SignalEvents {
   static const String meetingOffer = 'meeting-offer';
   static const String meetingAnswer = 'meeting-answer';
   static const String meetingIce = 'meeting-ice';
+  static const String meetingChat = 'meeting-chat';
 }

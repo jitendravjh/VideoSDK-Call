@@ -1,5 +1,4 @@
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:meet_videosdk/data/models/chat_message.dart';
 import 'package:meet_videosdk/data/models/ice_candidate_payload.dart';
 
 /// A mesh of peer connections for a group meeting: one shared local capture
@@ -27,7 +26,6 @@ abstract class MeshEngine {
     void Function(String peerId, {required bool cameraOn, required bool micOn})?
     onRemoteMediaState,
     void Function(String peerId, String sdp)? onRenegotiate,
-    void Function(ChatMessage message)? onChat,
   });
 
   /// Opens the single shared local capture. Call once before adding peers.
@@ -65,9 +63,6 @@ abstract class MeshEngine {
 
   /// Sends the local media state to every peer whose channel is open.
   void broadcastMediaState({required bool cameraOn, required bool micOn});
-
-  /// Sends a chat message to every peer whose channel is open.
-  void sendChat(ChatMessage message);
 
   /// Tears down every peer connection and the shared local capture.
   Future<void> closeAll();

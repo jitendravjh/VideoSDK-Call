@@ -248,7 +248,8 @@ class CallController extends _$CallController {
           MeetingErrorMessage() ||
           MeetingOfferMessage() ||
           MeetingAnswerMessage() ||
-          MeetingIceMessage():
+          MeetingIceMessage() ||
+          MeetingChatMessage():
         break;
     }
   }

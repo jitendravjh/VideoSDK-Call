@@ -275,6 +275,7 @@ class _ActiveScaffold extends ConsumerWidget {
             onPressed: () => showChatSheet(
               context,
               onSend: ref.read(meetingControllerProvider.notifier).sendChat,
+              showSender: true,
             ),
           ),
           Padding(

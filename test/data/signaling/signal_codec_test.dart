@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meet_videosdk/data/models/chat_message.dart';
 import 'package:meet_videosdk/data/models/ice_candidate_payload.dart';
 import 'package:meet_videosdk/data/models/signal_message.dart';
 import 'package:meet_videosdk/data/models/user.dart';
@@ -95,6 +96,21 @@ void main() {
       test('$index ${message.runtimeType}', () {
         expect(roundTrip(message), message);
       });
+    });
+
+    // Separate (not const) because ChatMessage carries a DateTime.
+    test('MeetingChatMessage', () {
+      final message = SignalMessage.meetingChat(
+        roomCode: 'HOST01',
+        message: ChatMessage(
+          id: 'c1',
+          senderId: 'A1',
+          senderName: 'Alice',
+          text: 'hi all',
+          sentAt: DateTime.utc(2026),
+        ),
+      );
+      expect(roundTrip(message), message);
     });
   });
 

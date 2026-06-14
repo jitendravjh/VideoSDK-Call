@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:meet_videosdk/data/models/chat_message.dart';
 import 'package:meet_videosdk/data/models/ice_candidate_payload.dart';
 import 'package:meet_videosdk/data/models/user.dart';
 
@@ -106,4 +107,9 @@ sealed class SignalMessage with _$SignalMessage {
     required String to,
     required IceCandidatePayload candidate,
   }) = MeetingIceMessage;
+
+  const factory SignalMessage.meetingChat({
+    required String roomCode,
+    required ChatMessage message,
+  }) = MeetingChatMessage;
 }
