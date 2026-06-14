@@ -16,7 +16,7 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: subosito/flutter-action@v2
         with:
@@ -24,9 +24,6 @@ jobs:
 
       - run: flutter pub get
 
-      # base-href must match the GitHub Pages sub-path (project site = /<repo>/).
-      # The web build connects to the public signalling server over wss
-      # (AppConfig.fallbackUrl), so calls work from the browser across networks.
       - run: flutter build web --release --base-href "/${{ github.event.repository.name }}/"
 
       - uses: JamesIves/github-pages-deploy-action@v4
