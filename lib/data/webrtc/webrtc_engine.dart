@@ -21,6 +21,7 @@ abstract class WebRtcEngine {
     void Function({required bool hasVideo})? onRemoteMedia,
     void Function({required bool cameraOn, required bool micOn})?
     onRemoteMediaState,
+    void Function(String sdp)? onRenegotiate,
   });
 
   Future<void> openLocalMedia({required bool audio, required bool video});
@@ -28,11 +29,21 @@ abstract class WebRtcEngine {
   Future<String> createOffer();
   Future<String> createAnswer();
   Future<void> setRemoteDescription(String sdp, String type);
+
+  /// Applies a renegotiation offer from the peer (e.g. they enabled their
+  /// camera mid-call) and returns the answer SDP.
+  Future<String> applyRemoteOffer(String sdp);
+
   Future<void> addRemoteCandidate(IceCandidatePayload candidate);
   void sendChat(ChatMessage message);
   void sendMediaState({required bool cameraOn, required bool micOn});
   Future<void> setMicEnabled({required bool enabled});
   Future<void> setCameraEnabled({required bool enabled});
+
+  /// Turns the local camera on mid-call: re-enables an existing video track, or
+  /// acquires one and renegotiates (surfaced via the `onRenegotiate` offer).
+  Future<void> enableCamera();
+
   Future<void> switchCamera();
   Future<void> setSpeakerphone({required bool enabled});
 

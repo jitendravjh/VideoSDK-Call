@@ -50,6 +50,7 @@ class MeshService implements MeshEngine {
   void Function(String peerId, {required bool hasVideo})? _onRemoteVideo;
   void Function(String peerId, {required bool cameraOn, required bool micOn})?
   _onRemoteMediaState;
+  void Function(String peerId, String sdp)? _onRenegotiate;
 
   @override
   bool get hasVideo => _localStream?.getVideoTracks().isNotEmpty ?? false;
@@ -64,6 +65,7 @@ class MeshService implements MeshEngine {
     void Function(String peerId, {required bool hasVideo})? onRemoteVideo,
     void Function(String peerId, {required bool cameraOn, required bool micOn})?
     onRemoteMediaState,
+    void Function(String peerId, String sdp)? onRenegotiate,
   }) {
     _onLocalCandidate = onLocalCandidate;
     _onConnected = onConnected;
@@ -71,6 +73,7 @@ class MeshService implements MeshEngine {
     _onChannelOpen = onChannelOpen;
     _onRemoteVideo = onRemoteVideo;
     _onRemoteMediaState = onRemoteMediaState;
+    _onRenegotiate = onRenegotiate;
   }
 
   @override
@@ -281,6 +284,39 @@ class MeshService implements MeshEngine {
   }
 
   @override
+  Future<void> enableCamera() async {
+    final stream = _localStream;
+    if (stream == null) return;
+    if (stream.getVideoTracks().isNotEmpty) {
+      for (final track in stream.getVideoTracks()) {
+        track.enabled = true;
+      }
+      return;
+    }
+    // Acquire one camera track, attach it to the shared stream, and renegotiate
+    // with every peer so each learns about the new video m-line.
+    final media = await navigator.mediaDevices.getUserMedia({
+      'audio': false,
+      'video': {
+        'facingMode': 'user',
+        'mandatory': {'minWidth': '640', 'minHeight': '480'},
+      },
+    });
+    final track = media.getVideoTracks().first;
+    await stream.addTrack(track);
+    if (_localRendererInitialized) {
+      localRenderer.srcObject = stream;
+    }
+    for (final entry in _peers.entries) {
+      final link = entry.value;
+      await link.pc.addTrack(track, stream);
+      final offer = await link.pc.createOffer();
+      await link.pc.setLocalDescription(offer);
+      _onRenegotiate?.call(entry.key, offer.sdp ?? '');
+    }
+  }
+
+  @override
   Future<void> switchCamera() async {
     final tracks = _localStream?.getVideoTracks() ?? <MediaStreamTrack>[];
     if (tracks.isEmpty) return;
@@ -324,6 +360,7 @@ class MeshService implements MeshEngine {
     _onChannelOpen = null;
     _onRemoteVideo = null;
     _onRemoteMediaState = null;
+    _onRenegotiate = null;
     if (_localRendererInitialized) {
       await localRenderer.dispose();
       _localRendererInitialized = false;

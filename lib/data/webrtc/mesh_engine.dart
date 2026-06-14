@@ -25,6 +25,7 @@ abstract class MeshEngine {
     void Function(String peerId, {required bool hasVideo})? onRemoteVideo,
     void Function(String peerId, {required bool cameraOn, required bool micOn})?
     onRemoteMediaState,
+    void Function(String peerId, String sdp)? onRenegotiate,
   });
 
   /// Opens the single shared local capture. Call once before adding peers.
@@ -51,6 +52,11 @@ abstract class MeshEngine {
 
   Future<void> setMicEnabled({required bool enabled});
   Future<void> setCameraEnabled({required bool enabled});
+
+  /// Turns the local camera on mid-meeting: re-enables the shared video track,
+  /// or acquires one and renegotiates with every peer (each via `onRenegotiate`).
+  Future<void> enableCamera();
+
   Future<void> switchCamera();
   Future<void> setSpeakerphone({required bool enabled});
 

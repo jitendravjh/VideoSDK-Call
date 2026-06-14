@@ -47,6 +47,7 @@ class WebRtcService implements WebRtcEngine {
   void Function({required bool hasVideo})? _onRemoteMedia;
   void Function({required bool cameraOn, required bool micOn})?
   _onRemoteMediaState;
+  void Function(String sdp)? _onRenegotiate;
 
   @override
   void bind({
@@ -58,6 +59,7 @@ class WebRtcService implements WebRtcEngine {
     void Function({required bool hasVideo})? onRemoteMedia,
     void Function({required bool cameraOn, required bool micOn})?
     onRemoteMediaState,
+    void Function(String sdp)? onRenegotiate,
   }) {
     _onLocalCandidate = onLocalCandidate;
     _onConnected = onConnected;
@@ -66,6 +68,7 @@ class WebRtcService implements WebRtcEngine {
     _onChatMessage = onChatMessage;
     _onRemoteMedia = onRemoteMedia;
     _onRemoteMediaState = onRemoteMediaState;
+    _onRenegotiate = onRenegotiate;
   }
 
   @override
@@ -204,6 +207,15 @@ class WebRtcService implements WebRtcEngine {
   }
 
   @override
+  Future<String> applyRemoteOffer(String sdp) async {
+    final pc = _requirePc();
+    await pc.setRemoteDescription(RTCSessionDescription(sdp, 'offer'));
+    final answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    return answer.sdp ?? '';
+  }
+
+  @override
   Future<void> addRemoteCandidate(IceCandidatePayload payload) async {
     final candidate = RTCIceCandidate(
       payload.candidate,
@@ -258,6 +270,39 @@ class WebRtcService implements WebRtcEngine {
         in _localStream?.getVideoTracks() ?? <MediaStreamTrack>[]) {
       track.enabled = enabled;
     }
+  }
+
+  @override
+  Future<void> enableCamera() async {
+    final stream = _localStream;
+    if (stream == null) return;
+    // Already have a video track (audio+video call): just re-enable it.
+    if (stream.getVideoTracks().isNotEmpty) {
+      for (final track in stream.getVideoTracks()) {
+        track.enabled = true;
+      }
+      return;
+    }
+    // Audio-only call: acquire a camera track, attach it, and renegotiate so
+    // the peer learns about the newly added video m-line.
+    final media = await navigator.mediaDevices.getUserMedia({
+      'audio': false,
+      'video': {
+        'facingMode': 'user',
+        'mandatory': {'minWidth': '640', 'minHeight': '480'},
+      },
+    });
+    final track = media.getVideoTracks().first;
+    await stream.addTrack(track);
+    if (_renderersInitialized) {
+      localRenderer.srcObject = stream;
+    }
+    final pc = _pc;
+    if (pc == null) return;
+    await pc.addTrack(track, stream);
+    final offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    _onRenegotiate?.call(offer.sdp ?? '');
   }
 
   @override
@@ -349,6 +394,7 @@ class WebRtcService implements WebRtcEngine {
     _onChatMessage = null;
     _onRemoteMedia = null;
     _onRemoteMediaState = null;
+    _onRenegotiate = null;
 
     if (_renderersInitialized) {
       await localRenderer.dispose();

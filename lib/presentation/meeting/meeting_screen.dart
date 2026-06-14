@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:meet_videosdk/application/meeting/meeting_controller.dart';
 import 'package:meet_videosdk/core/call_code.dart';
+import 'package:meet_videosdk/core/permissions.dart';
 import 'package:meet_videosdk/data/models/meeting_state.dart';
 import 'package:meet_videosdk/data/webrtc/webrtc_providers.dart';
 import 'package:meet_videosdk/presentation/call/call_controls.dart';
@@ -22,9 +23,11 @@ class MeetingScreen extends ConsumerStatefulWidget {
 }
 
 class _MeetingScreenState extends ConsumerState<MeetingScreen> {
+  static const _permissions = MediaPermissions();
+
   bool _muted = false;
   bool _speakerOn = true;
-  bool _cameraOff = false;
+  bool _cameraOn = false;
 
   @override
   void initState() {
@@ -53,9 +56,23 @@ class _MeetingScreenState extends ConsumerState<MeetingScreen> {
     unawaited(_meeting.setSpeakerphone(enabled: _speakerOn));
   }
 
-  void _toggleCamera() {
-    setState(() => _cameraOff = !_cameraOff);
-    unawaited(_meeting.setCameraEnabled(enabled: !_cameraOff));
+  Future<void> _toggleCamera() async {
+    if (_cameraOn) {
+      setState(() => _cameraOn = false);
+      await _meeting.setCameraEnabled(enabled: false);
+      return;
+    }
+    final result = await _permissions.request(camera: true);
+    if (result != MediaPermissionResult.granted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Camera permission denied')),
+        );
+      }
+      return;
+    }
+    await _meeting.enableCamera();
+    if (mounted) setState(() => _cameraOn = true);
   }
 
   @override
@@ -84,7 +101,7 @@ class _MeetingScreenState extends ConsumerState<MeetingScreen> {
           state: state,
           muted: _muted,
           speakerOn: _speakerOn,
-          cameraOff: _cameraOff,
+          cameraOn: _cameraOn,
           onToggleMute: _toggleMute,
           onToggleSpeaker: _toggleSpeaker,
           onToggleCamera: _toggleCamera,
@@ -165,7 +182,7 @@ class _ActiveScaffold extends ConsumerWidget {
     required this.state,
     required this.muted,
     required this.speakerOn,
-    required this.cameraOff,
+    required this.cameraOn,
     required this.onToggleMute,
     required this.onToggleSpeaker,
     required this.onToggleCamera,
@@ -176,7 +193,7 @@ class _ActiveScaffold extends ConsumerWidget {
   final MeetingState state;
   final bool muted;
   final bool speakerOn;
-  final bool cameraOff;
+  final bool cameraOn;
   final VoidCallback onToggleMute;
   final VoidCallback onToggleSpeaker;
   final VoidCallback onToggleCamera;
@@ -189,13 +206,12 @@ class _ActiveScaffold extends ConsumerWidget {
     final engine = ref.watch(meshEngineProvider);
     final participants = state.participants;
     final roomCode = state.roomCode ?? '';
-    final localHasVideo = engine.hasVideo;
 
     final tiles = <Widget>[
       _Tile(
         name: 'You',
         renderer: engine.localRenderer,
-        showVideo: localHasVideo && !cameraOff,
+        showVideo: cameraOn,
         mirror: true,
         micOn: !muted,
         connecting: false,
@@ -264,8 +280,7 @@ class _ActiveScaffold extends ConsumerWidget {
               child: CallControls(
                 muted: muted,
                 speakerOn: speakerOn,
-                videoCall: localHasVideo,
-                cameraOff: cameraOff,
+                cameraOn: cameraOn,
                 onToggleMute: onToggleMute,
                 onToggleSpeaker: onToggleSpeaker,
                 onToggleCamera: onToggleCamera,

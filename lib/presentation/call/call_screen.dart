@@ -8,6 +8,7 @@ import 'package:meet_videosdk/application/call/chat_controller.dart';
 import 'package:meet_videosdk/application/call/remote_media_controller.dart';
 import 'package:meet_videosdk/core/call_code.dart';
 import 'package:meet_videosdk/core/formatting.dart';
+import 'package:meet_videosdk/core/permissions.dart';
 import 'package:meet_videosdk/data/models/call_state.dart';
 import 'package:meet_videosdk/data/models/user.dart';
 import 'package:meet_videosdk/data/webrtc/webrtc_providers.dart';
@@ -26,9 +27,11 @@ class CallScreen extends ConsumerStatefulWidget {
 }
 
 class _CallScreenState extends ConsumerState<CallScreen> {
+  static const _permissions = MediaPermissions();
+
   bool _muted = false;
   bool _speakerOn = false;
-  bool _cameraOff = false;
+  bool _cameraOn = false;
   Timer? _ticker;
   Duration _elapsed = Duration.zero;
   bool _terminalHandled = false;
@@ -43,6 +46,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     if (next is Connected && previous is! Connected) {
       _startTimer();
       final video = ref.read(webRtcEngineProvider).hasVideo;
+      _cameraOn = video;
       _speakerOn = video;
       unawaited(
         ref
@@ -87,13 +91,26 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     );
   }
 
-  void _toggleCamera() {
-    setState(() => _cameraOff = !_cameraOff);
-    unawaited(
-      ref
-          .read(callControllerProvider.notifier)
-          .setCameraEnabled(enabled: !_cameraOff),
-    );
+  Future<void> _toggleCamera() async {
+    final notifier = ref.read(callControllerProvider.notifier);
+    if (_cameraOn) {
+      setState(() => _cameraOn = false);
+      await notifier.setCameraEnabled(enabled: false);
+      return;
+    }
+    // Turning the camera on: ensure camera permission first (the call may have
+    // started audio-only), then acquire + renegotiate.
+    final result = await _permissions.request(camera: true);
+    if (result != MediaPermissionResult.granted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Camera permission denied')),
+        );
+      }
+      return;
+    }
+    await notifier.enableCamera();
+    if (mounted) setState(() => _cameraOn = true);
   }
 
   void _handleBack(CallState state) {
@@ -162,7 +179,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         elapsed: _elapsed,
         muted: _muted,
         speakerOn: _speakerOn,
-        cameraOff: _cameraOff,
+        cameraOn: _cameraOn,
         onToggleMute: _toggleMute,
         onToggleSpeaker: _toggleSpeaker,
         onToggleCamera: _toggleCamera,
@@ -252,7 +269,7 @@ class _ConnectedView extends ConsumerWidget {
     required this.elapsed,
     required this.muted,
     required this.speakerOn,
-    required this.cameraOff,
+    required this.cameraOn,
     required this.onToggleMute,
     required this.onToggleSpeaker,
     required this.onToggleCamera,
@@ -263,7 +280,7 @@ class _ConnectedView extends ConsumerWidget {
   final Duration elapsed;
   final bool muted;
   final bool speakerOn;
-  final bool cameraOff;
+  final bool cameraOn;
   final VoidCallback onToggleMute;
   final VoidCallback onToggleSpeaker;
   final VoidCallback onToggleCamera;
@@ -273,7 +290,6 @@ class _ConnectedView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final engine = ref.watch(webRtcEngineProvider);
-    final localHasVideo = engine.hasVideo;
     final remoteHasVideo = ref.watch(remoteVideoProvider);
     final remoteMicOn = ref.watch(remoteMicProvider);
     final unread = ref.watch(chatUnreadProvider);
@@ -357,7 +373,7 @@ class _ConnectedView extends ConsumerWidget {
               ],
             ),
           ),
-          if (localHasVideo)
+          if (cameraOn)
             Positioned(
               top: 12,
               right: 12,
@@ -365,22 +381,11 @@ class _ConnectedView extends ConsumerWidget {
               height: 140,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: cameraOff
-                    ? const ColoredBox(
-                        color: Colors.black54,
-                        child: Center(
-                          child: Icon(
-                            Icons.videocam_off,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      )
-                    : RTCVideoView(
-                        engine.localRenderer,
-                        mirror: true,
-                        objectFit:
-                            RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                      ),
+                child: RTCVideoView(
+                  engine.localRenderer,
+                  mirror: true,
+                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                ),
               ),
             ),
           Positioned(
@@ -403,8 +408,7 @@ class _ConnectedView extends ConsumerWidget {
               child: CallControls(
                 muted: muted,
                 speakerOn: speakerOn,
-                videoCall: localHasVideo,
-                cameraOff: cameraOff,
+                cameraOn: cameraOn,
                 onToggleMute: onToggleMute,
                 onToggleSpeaker: onToggleSpeaker,
                 onToggleCamera: onToggleCamera,

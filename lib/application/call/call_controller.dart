@@ -179,6 +179,14 @@ class CallController extends _$CallController {
     _broadcastMediaState();
   }
 
+  /// Turns the camera on mid-call, acquiring it (and renegotiating) if the call
+  /// started audio-only. Permission must already be granted by the caller.
+  Future<void> enableCamera() async {
+    _localCameraOn = true;
+    await _engine.enableCamera();
+    _broadcastMediaState();
+  }
+
   Future<void> switchCamera() => _engine.switchCamera();
 
   Future<void> setSpeakerphone({required bool enabled}) =>
@@ -246,6 +254,17 @@ class CallController extends _$CallController {
 
   void _onIncomingOffer(String from, String sdp, String? fromName) {
     final self = _self;
+    // A fresh offer from the peer we are already connected to is a
+    // renegotiation (e.g. they turned their camera on mid-call): answer it in
+    // place without disturbing the call state.
+    final current = state;
+    final currentPeer = current.peer;
+    if ((current is Connected || current is Connecting) &&
+        currentPeer != null &&
+        from == currentPeer.userId) {
+      unawaited(_answerRenegotiation(from, sdp));
+      return;
+    }
     // Busy if already on a 1:1 call or in a group meeting: decline so the
     // incoming call cannot yank the user out of an active meeting.
     final inMeeting = ref.read(meetingControllerProvider) is! MeetingIdle;
@@ -266,7 +285,14 @@ class CallController extends _$CallController {
 
   Future<void> _onAnswer(String sdp, String? fromName) async {
     final peer = state.peer;
-    if (state is! Outgoing || peer == null) return;
+    if (peer == null) return;
+    // A renegotiation answer (we enabled our camera mid-call) lands while
+    // already Connected: just apply it without changing state.
+    if (state is Connected) {
+      await _engine.setRemoteDescription(sdp, 'answer');
+      return;
+    }
+    if (state is! Outgoing) return;
     // The answer carries the callee's real name; adopt it so the caller stops
     // showing the code placeholder it built at join-by-code time.
     final resolved = (fromName != null && fromName.isNotEmpty)
@@ -275,6 +301,20 @@ class CallController extends _$CallController {
     _historyPeer = resolved;
     state = CallState.connecting(peer: resolved);
     await _engine.setRemoteDescription(sdp, 'answer');
+  }
+
+  Future<void> _answerRenegotiation(String from, String sdp) async {
+    final self = _self;
+    if (self == null) return;
+    final answer = await _engine.applyRemoteOffer(sdp);
+    _signaling.send(
+      SignalMessage.answer(
+        from: self.userId,
+        to: from,
+        sdp: answer,
+        fromName: self.displayName,
+      ),
+    );
   }
 
   void _onDeclined() {
@@ -340,6 +380,19 @@ class CallController extends _$CallController {
       onRemoteMediaState: ({required cameraOn, required micOn}) {
         ref.read(remoteVideoProvider.notifier).update(hasVideo: cameraOn);
         ref.read(remoteMicProvider.notifier).update(micOn: micOn);
+      },
+      onRenegotiate: (sdp) {
+        final self = _self;
+        final peer = state.peer;
+        if (self == null || peer == null) return;
+        _signaling.send(
+          SignalMessage.offer(
+            from: self.userId,
+            to: peer.userId,
+            sdp: sdp,
+            fromName: self.displayName,
+          ),
+        );
       },
     );
   }

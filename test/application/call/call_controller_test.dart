@@ -191,6 +191,7 @@ class _FakeEngine implements WebRtcEngine {
     void Function({required bool hasVideo})? onRemoteMedia,
     void Function({required bool cameraOn, required bool micOn})?
     onRemoteMediaState,
+    void Function(String sdp)? onRenegotiate,
   }) {
     _onConnected = onConnected;
   }
@@ -228,6 +229,15 @@ class _FakeEngine implements WebRtcEngine {
   Future<void> setRemoteDescription(String sdp, String type) async {
     remoteDescriptions.add(sdp);
   }
+
+  @override
+  Future<String> applyRemoteOffer(String sdp) async {
+    remoteDescriptions.add(sdp);
+    return 'answer';
+  }
+
+  @override
+  Future<void> enableCamera() async {}
 
   @override
   Future<void> addRemoteCandidate(IceCandidatePayload candidate) async {

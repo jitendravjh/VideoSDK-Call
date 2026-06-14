@@ -260,6 +260,7 @@ class _FakeMesh implements MeshEngine {
     void Function(String peerId, {required bool hasVideo})? onRemoteVideo,
     void Function(String peerId, {required bool cameraOn, required bool micOn})?
     onRemoteMediaState,
+    void Function(String peerId, String sdp)? onRenegotiate,
   }) {
     _onConnected = onConnected;
   }
@@ -319,6 +320,9 @@ class _FakeMesh implements MeshEngine {
 
   @override
   Future<void> setCameraEnabled({required bool enabled}) async {}
+
+  @override
+  Future<void> enableCamera() async {}
 
   @override
   Future<void> switchCamera() async {}

@@ -99,6 +99,15 @@ class MeetingController extends _$MeetingController {
     _engine.broadcastMediaState(cameraOn: _cameraOn, micOn: _micOn);
   }
 
+  /// Turns the camera on mid-meeting, acquiring it (and renegotiating with every
+  /// peer) if the meeting started audio-only. Permission must already be
+  /// granted by the caller.
+  Future<void> enableCamera() async {
+    _cameraOn = true;
+    await _engine.enableCamera();
+    _engine.broadcastMediaState(cameraOn: _cameraOn, micOn: _micOn);
+  }
+
   Future<void> switchCamera() => _engine.switchCamera();
 
   Future<void> setSpeakerphone({required bool enabled}) =>
@@ -252,6 +261,18 @@ class MeetingController extends _$MeetingController {
             peerId,
             (p) => p.copyWith(hasVideo: cameraOn, micOn: micOn),
           ),
+      onRenegotiate: (peerId, sdp) {
+        final self = _self;
+        if (self == null) return;
+        _signaling.send(
+          SignalMessage.meetingOffer(
+            from: self.userId,
+            to: peerId,
+            sdp: sdp,
+            fromName: self.displayName,
+          ),
+        );
+      },
     );
   }
 
