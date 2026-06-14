@@ -14,7 +14,10 @@ function lanAddresses() {
   for (const nets of Object.values(os.networkInterfaces())) {
     for (const net of nets ?? []) {
       const isV4 = net.family === 'IPv4' || net.family === 4;
-      if (isV4 && !net.internal) result.push(net.address);
+      // Skip loopback and link-local (169.254.x), which apps cannot reach.
+      if (isV4 && !net.internal && !net.address.startsWith('169.254.')) {
+        result.push(net.address);
+      }
     }
   }
   return result;
@@ -357,7 +360,8 @@ io.on('connection', (socket) => {
 
 httpServer.listen(PORT, () => {
   console.log(`Signalling server listening on port ${PORT}`);
-  for (const address of lanAddresses()) {
+  const addresses = lanAddresses();
+  for (const address of addresses) {
     console.log(`  reachable on this network at http://${address}:${PORT}`);
   }
   // Advertise on the LAN (mDNS/Bonjour) so apps on the same Wi-Fi discover and
@@ -368,6 +372,10 @@ httpServer.listen(PORT, () => {
       name: 'VideoSDK Signalling',
       type: 'videosdk',
       port: Number(PORT),
+      // Carry the IP in the TXT record. Some routers give the host a domain
+      // suffix (e.g. ".bbrouter") whose hostname has no mDNS A record, so a
+      // client resolving the SRV target gets no address. The TXT ip always works.
+      txt: addresses.length > 0 ? { ip: addresses[0] } : undefined,
     });
     console.log('  advertising via mDNS as _videosdk._tcp');
   } catch (error) {

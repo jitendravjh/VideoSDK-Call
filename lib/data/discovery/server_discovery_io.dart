@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:meet_videosdk/core/constants.dart';
 import 'package:meet_videosdk/core/logging.dart';
@@ -65,8 +66,15 @@ class ServerDiscovery {
   static String? _urlFromServices(List<Service> services) {
     for (final service in services) {
       final port = service.port;
+      if (port == null) continue;
+      // Prefer the IP carried in the TXT record: the advertised hostname can be
+      // unresolvable (router-assigned domain suffix with no mDNS A record).
+      final txtIp = service.txt?['ip'];
+      if (txtIp != null && txtIp.isNotEmpty) {
+        return 'http://${utf8.decode(txtIp)}:$port';
+      }
       final addresses = service.addresses;
-      if (port != null && addresses != null && addresses.isNotEmpty) {
+      if (addresses != null && addresses.isNotEmpty) {
         return 'http://${addresses.first.address}:$port';
       }
     }
