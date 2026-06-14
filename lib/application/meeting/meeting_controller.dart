@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:meet_videosdk/application/call/chat_controller.dart';
 import 'package:meet_videosdk/application/lobby/session_controller.dart';
 import 'package:meet_videosdk/application/meeting/meeting_reducer.dart';
 import 'package:meet_videosdk/core/call_code.dart';
 import 'package:meet_videosdk/core/logging.dart';
+import 'package:meet_videosdk/data/models/chat_message.dart';
 import 'package:meet_videosdk/data/models/meeting_state.dart';
 import 'package:meet_videosdk/data/models/signal_message.dart';
 import 'package:meet_videosdk/data/models/user.dart';
@@ -12,6 +14,7 @@ import 'package:meet_videosdk/data/signaling/signaling_transport.dart';
 import 'package:meet_videosdk/data/webrtc/mesh_engine.dart';
 import 'package:meet_videosdk/data/webrtc/webrtc_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:uuid/uuid.dart';
 
 part 'meeting_controller.g.dart';
 
@@ -23,6 +26,8 @@ part 'meeting_controller.g.dart';
 @riverpod
 class MeetingController extends _$MeetingController {
   final AppLogger _log = AppLogger('MeetingController');
+
+  static const _uuid = Uuid();
 
   late final MeshEngine _engine = ref.read(meshEngineProvider);
   late final SignalingTransport _signaling = ref.read(signalingServiceProvider);
@@ -60,6 +65,7 @@ class MeetingController extends _$MeetingController {
     if (self == null || self.userId.isEmpty || state is! MeetingIdle) return;
     _micOn = true;
     _cameraOn = video;
+    _resetChat();
     // The code is unknown until the server replies with `meeting-joined`.
     state = const MeetingState.connecting(roomCode: '', isHost: true);
     _bindEngine();
@@ -80,6 +86,7 @@ class MeetingController extends _$MeetingController {
     if (roomCode.isEmpty) return;
     _micOn = true;
     _cameraOn = video;
+    _resetChat();
     state = MeetingState.connecting(roomCode: roomCode, isHost: false);
     _bindEngine();
     try {
@@ -131,6 +138,25 @@ class MeetingController extends _$MeetingController {
 
   Future<void> setSpeakerphone({required bool enabled}) =>
       _engine.setSpeakerphone(enabled: enabled);
+
+  void sendChat(String text) {
+    final self = _self;
+    final trimmed = text.trim();
+    if (self == null || self.userId.isEmpty || trimmed.isEmpty) return;
+    final message = ChatMessage(
+      id: _uuid.v4(),
+      senderId: self.userId,
+      text: trimmed,
+      sentAt: DateTime.now(),
+    );
+    _engine.sendChat(message);
+    ref.read(chatControllerProvider.notifier).add(message);
+  }
+
+  void _resetChat() {
+    ref.read(chatControllerProvider.notifier).clear();
+    ref.read(chatUnreadProvider.notifier).reset();
+  }
 
   void _onSignal(SignalMessage message) {
     // Only act on meeting traffic while actually in a meeting; everything else
@@ -294,6 +320,10 @@ class MeetingController extends _$MeetingController {
             fromName: self.displayName,
           ),
         );
+      },
+      onChat: (message) {
+        ref.read(chatControllerProvider.notifier).add(message);
+        ref.read(chatUnreadProvider.notifier).increment();
       },
     );
   }

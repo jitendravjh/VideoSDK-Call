@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:meet_videosdk/application/call/chat_controller.dart';
 import 'package:meet_videosdk/application/meeting/meeting_controller.dart';
 import 'package:meet_videosdk/core/call_code.dart';
 import 'package:meet_videosdk/core/permissions.dart';
 import 'package:meet_videosdk/data/models/meeting_state.dart';
 import 'package:meet_videosdk/data/webrtc/webrtc_providers.dart';
 import 'package:meet_videosdk/presentation/call/call_controls.dart';
+import 'package:meet_videosdk/presentation/call/chat_sheet.dart';
 import 'package:meet_videosdk/presentation/common/back_home_button.dart';
 import 'package:meet_videosdk/presentation/common/user_avatar.dart';
 
@@ -263,6 +265,18 @@ class _ActiveScaffold extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Meeting'),
         actions: [
+          IconButton(
+            tooltip: 'Chat',
+            icon: Badge.count(
+              count: ref.watch(chatUnreadProvider),
+              isLabelVisible: ref.watch(chatUnreadProvider) > 0,
+              child: const Icon(Icons.chat_bubble_outline),
+            ),
+            onPressed: () => showChatSheet(
+              context,
+              onSend: ref.read(meetingControllerProvider.notifier).sendChat,
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: ActionChip(

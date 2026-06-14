@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:meet_videosdk/core/constants.dart';
+import 'package:meet_videosdk/data/models/chat_message.dart';
 import 'package:meet_videosdk/data/models/ice_candidate_payload.dart';
 import 'package:meet_videosdk/data/webrtc/data_channel_codec.dart';
 import 'package:meet_videosdk/data/webrtc/mesh_engine.dart';
@@ -51,6 +52,7 @@ class MeshService implements MeshEngine {
   void Function(String peerId, {required bool cameraOn, required bool micOn})?
   _onRemoteMediaState;
   void Function(String peerId, String sdp)? _onRenegotiate;
+  void Function(ChatMessage message)? _onChat;
 
   @override
   bool get hasVideo => _localStream?.getVideoTracks().isNotEmpty ?? false;
@@ -66,6 +68,7 @@ class MeshService implements MeshEngine {
     void Function(String peerId, {required bool cameraOn, required bool micOn})?
     onRemoteMediaState,
     void Function(String peerId, String sdp)? onRenegotiate,
+    void Function(ChatMessage message)? onChat,
   }) {
     _onLocalCandidate = onLocalCandidate;
     _onConnected = onConnected;
@@ -74,6 +77,7 @@ class MeshService implements MeshEngine {
     _onRemoteVideo = onRemoteVideo;
     _onRemoteMediaState = onRemoteMediaState;
     _onRenegotiate = onRenegotiate;
+    _onChat = onChat;
   }
 
   @override
@@ -330,10 +334,17 @@ class MeshService implements MeshEngine {
 
   @override
   void broadcastMediaState({required bool cameraOn, required bool micOn}) {
-    final payload = DataChannelCodec.encodeMediaState(
-      cameraOn: cameraOn,
-      micOn: micOn,
+    _broadcast(
+      DataChannelCodec.encodeMediaState(cameraOn: cameraOn, micOn: micOn),
     );
+  }
+
+  @override
+  void sendChat(ChatMessage message) {
+    _broadcast(DataChannelCodec.encodeChat(message));
+  }
+
+  void _broadcast(String payload) {
     for (final link in _peers.values) {
       final channel = link.channel;
       if (channel == null) continue;
@@ -361,6 +372,7 @@ class MeshService implements MeshEngine {
     _onRemoteVideo = null;
     _onRemoteMediaState = null;
     _onRenegotiate = null;
+    _onChat = null;
     if (_localRendererInitialized) {
       await localRenderer.dispose();
       _localRendererInitialized = false;
@@ -380,7 +392,8 @@ class MeshService implements MeshEngine {
         switch (decoded) {
           case MediaStateData(:final cameraOn, :final micOn):
             _onRemoteMediaState?.call(peerId, cameraOn: cameraOn, micOn: micOn);
-          case ChatData():
+          case ChatData(:final message):
+            _onChat?.call(message);
           case null:
             break;
         }

@@ -2,22 +2,28 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:meet_videosdk/application/call/call_controller.dart';
 import 'package:meet_videosdk/application/call/chat_controller.dart';
 import 'package:meet_videosdk/application/lobby/session_controller.dart';
 import 'package:meet_videosdk/data/models/chat_message.dart';
 
-Future<void> showChatSheet(BuildContext context) {
+/// Shows the shared chat transcript. [onSend] forwards the typed text to the
+/// active controller (1:1 call or meeting), so one sheet serves both.
+Future<void> showChatSheet(
+  BuildContext context, {
+  required ValueChanged<String> onSend,
+}) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (_) => const ChatSheet(),
+    builder: (_) => ChatSheet(onSend: onSend),
   );
 }
 
 class ChatSheet extends ConsumerStatefulWidget {
-  const ChatSheet({super.key});
+  const ChatSheet({required this.onSend, super.key});
+
+  final ValueChanged<String> onSend;
 
   @override
   ConsumerState<ChatSheet> createState() => _ChatSheetState();
@@ -46,7 +52,7 @@ class _ChatSheetState extends ConsumerState<ChatSheet> {
   void _send() {
     final text = _input.text;
     if (text.trim().isEmpty) return;
-    ref.read(callControllerProvider.notifier).sendChat(text);
+    widget.onSend(text);
     _input.clear();
   }
 

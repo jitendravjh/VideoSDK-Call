@@ -375,47 +375,32 @@ class _MeetingDialogState extends State<_MeetingDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+    // Compact, non-scrolling content: the dialog floats above the keyboard, so
+    // a short body keeps the join field fully visible without scrolling.
     return AlertDialog(
       title: const Text('Meeting'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Start a meeting and share the code it gives you.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          FilledButton.icon(
+            onPressed: _host,
+            icon: const Icon(Icons.groups),
+            label: const Text('Host meeting'),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _controller,
+            textCapitalization: TextCapitalization.characters,
+            textInputAction: TextInputAction.go,
+            decoration: const InputDecoration(
+              labelText: 'Or join with a code',
+              hintText: 'Meeting code',
+              prefixIcon: Icon(Icons.dialpad),
             ),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: _host,
-              icon: const Icon(Icons.groups),
-              label: const Text('Host meeting'),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Or join a meeting',
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _controller,
-              textCapitalization: TextCapitalization.characters,
-              textInputAction: TextInputAction.go,
-              decoration: const InputDecoration(
-                hintText: 'Enter meeting code',
-                prefixIcon: Icon(Icons.dialpad),
-              ),
-              onSubmitted: (_) => _join(),
-            ),
-          ],
-        ),
+            onSubmitted: (_) => _join(),
+          ),
+        ],
       ),
       actions: [
         TextButton(

@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:meet_videosdk/application/call/chat_controller.dart';
 import 'package:meet_videosdk/application/lobby/session_controller.dart';
 import 'package:meet_videosdk/application/meeting/meeting_controller.dart';
+import 'package:meet_videosdk/data/models/chat_message.dart';
 import 'package:meet_videosdk/data/models/ice_candidate_payload.dart';
 import 'package:meet_videosdk/data/models/meeting_state.dart';
 import 'package:meet_videosdk/data/models/signal_message.dart';
@@ -184,6 +186,20 @@ void main() {
     expect(mesh.closed, isTrue);
   });
 
+  test('sending a chat echoes it into the shared transcript', () async {
+    await notifier().host();
+    signaling.emit(
+      const SignalMessage.meetingJoined(roomCode: 'MEET01', peers: []),
+    );
+    await _pump();
+
+    notifier().sendChat('hello team');
+    final messages = container.read(chatControllerProvider);
+    expect(messages, hasLength(1));
+    expect(messages.single.text, 'hello team');
+    expect(messages.single.senderId, 'ALICE1');
+  });
+
   test('a meeting-error ends the meeting with a readable reason', () async {
     await notifier().join('NOPE99');
     signaling.emit(
@@ -261,6 +277,7 @@ class _FakeMesh implements MeshEngine {
     void Function(String peerId, {required bool cameraOn, required bool micOn})?
     onRemoteMediaState,
     void Function(String peerId, String sdp)? onRenegotiate,
+    void Function(ChatMessage message)? onChat,
   }) {
     _onConnected = onConnected;
   }
@@ -332,6 +349,9 @@ class _FakeMesh implements MeshEngine {
 
   @override
   void broadcastMediaState({required bool cameraOn, required bool micOn}) {}
+
+  @override
+  void sendChat(ChatMessage message) {}
 
   @override
   Future<void> closeAll() async {

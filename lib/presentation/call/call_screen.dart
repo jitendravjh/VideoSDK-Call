@@ -407,7 +407,10 @@ class _ConnectedView extends ConsumerWidget {
                 isLabelVisible: unread > 0,
                 child: const Icon(Icons.chat_bubble_outline),
               ),
-              onPressed: () => showChatSheet(context),
+              onPressed: () => showChatSheet(
+                context,
+                onSend: ref.read(callControllerProvider.notifier).sendChat,
+              ),
             ),
           ),
           Align(
