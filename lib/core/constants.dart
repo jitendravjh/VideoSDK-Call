@@ -32,6 +32,14 @@ class AppConfig {
   /// The mDNS/DNS-SD service type the server advertises and the app browses for.
   static const String discoveryServiceType = '_videosdk._tcp';
 
+  /// Public signalling server, reachable over the internet, used when no LAN
+  /// server is found via mDNS, so calls work across networks (incl. cellular).
+  /// mDNS is tried first, so the direct LAN server still wins on the home Wi-Fi.
+  static const String fallbackUrl = String.fromEnvironment(
+    'SIGNALING_FALLBACK_URL',
+    defaultValue: 'https://signal.jitendravjh.in',
+  );
+
   static String get signalingHost {
     if (_hostOverride.isNotEmpty) {
       return _hostOverride;
