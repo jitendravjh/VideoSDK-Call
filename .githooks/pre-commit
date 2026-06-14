@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+set -e
+
+# Never let a .env (TURN credentials etc.) be committed.
+if git diff --cached --name-only | grep -qE '(^|/)\.env$'; then
+  echo "pre-commit: refusing to commit a .env file (contains secrets)."
+  exit 1
+fi
+
+dart format --set-exit-if-changed .
+flutter analyze
