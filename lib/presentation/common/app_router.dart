@@ -2,11 +2,15 @@ import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meet_videosdk/application/call/call_controller.dart';
 import 'package:meet_videosdk/application/lobby/session_controller.dart';
+import 'package:meet_videosdk/application/meeting/meeting_controller.dart';
 import 'package:meet_videosdk/data/models/call_state.dart';
+import 'package:meet_videosdk/data/models/meeting_state.dart';
 import 'package:meet_videosdk/data/models/user.dart';
 import 'package:meet_videosdk/presentation/call/call_screen.dart';
 import 'package:meet_videosdk/presentation/lobby/lobby_screen.dart';
 import 'package:meet_videosdk/presentation/lobby/sign_in_screen.dart';
+import 'package:meet_videosdk/presentation/meeting/meeting_lobby_screen.dart';
+import 'package:meet_videosdk/presentation/meeting/meeting_screen.dart';
 import 'package:meet_videosdk/presentation/prejoin/prejoin_screen.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -19,6 +23,8 @@ class AppRoutes {
   static const String lobby = '/lobby';
   static const String prejoin = '/prejoin';
   static const String call = '/call';
+  static const String meetingLobby = '/meeting-lobby';
+  static const String meeting = '/meeting';
 }
 
 @Riverpod(keepAlive: true)
@@ -27,6 +33,7 @@ GoRouter router(Ref ref) {
   ref
     ..listen(sessionControllerProvider, (_, _) => refresh.value++)
     ..listen(callControllerProvider, (_, _) => refresh.value++)
+    ..listen(meetingControllerProvider, (_, _) => refresh.value++)
     ..onDispose(refresh.dispose);
 
   return GoRouter(
@@ -39,13 +46,21 @@ GoRouter router(Ref ref) {
         return location == AppRoutes.signIn ? null : AppRoutes.signIn;
       }
 
-      // A call (incoming, outgoing, or active) takes over the screen; an
-      // incoming call interrupts whatever route is showing.
+      // A 1:1 call takes precedence and takes over the screen; an incoming call
+      // interrupts whatever route is showing.
       final inCall = ref.read(callControllerProvider) is! Idle;
       if (inCall) {
         return location == AppRoutes.call ? null : AppRoutes.call;
       }
-      if (location == AppRoutes.call || location == AppRoutes.signIn) {
+      // Then a meeting (connecting, active, or ended) owns the screen. The
+      // meeting lobby is a normal pushable screen and is left alone here.
+      final inMeeting = ref.read(meetingControllerProvider) is! MeetingIdle;
+      if (inMeeting) {
+        return location == AppRoutes.meeting ? null : AppRoutes.meeting;
+      }
+      if (location == AppRoutes.call ||
+          location == AppRoutes.meeting ||
+          location == AppRoutes.signIn) {
         return AppRoutes.lobby;
       }
       return null;
@@ -66,6 +81,14 @@ GoRouter router(Ref ref) {
       GoRoute(
         path: AppRoutes.call,
         builder: (context, state) => const CallScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.meetingLobby,
+        builder: (context, state) => const MeetingLobbyScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.meeting,
+        builder: (context, state) => const MeetingScreen(),
       ),
     ],
   );

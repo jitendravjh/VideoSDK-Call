@@ -58,12 +58,28 @@ class LobbyScreen extends ConsumerWidget {
                   displayName: self?.displayName,
                 ),
                 const SizedBox(height: 12),
-                FilledButton.icon(
-                  onPressed: (self != null && self.userId.isNotEmpty)
-                      ? () => _showJoinDialog(context, ref, self)
-                      : null,
-                  icon: const Icon(Icons.dialpad),
-                  label: const Text('Join with a code'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: (self != null && self.userId.isNotEmpty)
+                            ? () => _showJoinDialog(context, ref, self)
+                            : null,
+                        icon: const Icon(Icons.call),
+                        label: const Text('Call'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton.tonalIcon(
+                        onPressed: (self != null && self.userId.isNotEmpty)
+                            ? () => context.push(AppRoutes.meetingLobby)
+                            : null,
+                        icon: const Icon(Icons.groups),
+                        label: const Text('Meeting'),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 24),
                 Text(
