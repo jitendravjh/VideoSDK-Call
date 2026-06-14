@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:meet_videosdk/core/constants.dart';
+import 'package:meet_videosdk/core/logging.dart';
 import 'package:meet_videosdk/data/models/chat_message.dart';
 import 'package:meet_videosdk/data/models/ice_candidate_payload.dart';
 import 'package:meet_videosdk/data/webrtc/data_channel_codec.dart';
@@ -24,6 +25,8 @@ class _PeerLink {
 /// capture is owned here and is never released by a single peer's teardown.
 class MeshService implements MeshEngine {
   MeshService();
+
+  final AppLogger _log = AppLogger('MeshService');
 
   @override
   final RTCVideoRenderer localRenderer = RTCVideoRenderer();
@@ -341,6 +344,8 @@ class MeshService implements MeshEngine {
 
   @override
   void sendChat(ChatMessage message) {
+    final open = _peers.values.where((l) => l.channel != null).length;
+    _log.info('sendChat to $open/${_peers.length} open channels');
     _broadcast(DataChannelCodec.encodeChat(message));
   }
 
@@ -384,6 +389,7 @@ class MeshService implements MeshEngine {
     channel
       ..onDataChannelState = (state) {
         if (state == RTCDataChannelState.RTCDataChannelOpen) {
+          _log.info('data channel open for $peerId');
           _onChannelOpen?.call(peerId);
         }
       }
@@ -393,6 +399,7 @@ class MeshService implements MeshEngine {
           case MediaStateData(:final cameraOn, :final micOn):
             _onRemoteMediaState?.call(peerId, cameraOn: cameraOn, micOn: micOn);
           case ChatData(:final message):
+            _log.info('chat received from ${message.senderId}');
             _onChat?.call(message);
           case null:
             break;
