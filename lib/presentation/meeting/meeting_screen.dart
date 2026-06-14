@@ -138,14 +138,19 @@ class _ConnectingScaffold extends StatelessWidget {
           children: [
             const CircularProgressIndicator(),
             const SizedBox(height: 20),
-            Text('Joining meeting', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 6),
             Text(
-              CallCode.format(roomCode),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+              roomCode.isEmpty ? 'Starting meeting' : 'Joining meeting',
+              style: theme.textTheme.titleMedium,
             ),
+            if (roomCode.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                CallCode.format(roomCode),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -244,16 +249,7 @@ class _ActiveScaffold extends ConsumerWidget {
             child: ActionChip(
               avatar: const Icon(Icons.copy, size: 16),
               label: Text(CallCode.format(roomCode)),
-              onPressed: () {
-                unawaited(
-                  Clipboard.setData(
-                    ClipboardData(text: CallCode.format(roomCode)),
-                  ),
-                );
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Meeting code copied')),
-                );
-              },
+              onPressed: () => _copyCode(context, roomCode),
             ),
           ),
         ],
@@ -263,14 +259,35 @@ class _ActiveScaffold extends ConsumerWidget {
           children: [
             if (participants.isEmpty)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: Text(
-                  'Waiting for others. Share code '
-                  '${CallCode.format(roomCode)} to invite them.',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: Column(
+                  children: [
+                    Text(
+                      'Waiting for others to join',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Share this meeting code',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      CallCode.format(roomCode),
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 3,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    OutlinedButton.icon(
+                      onPressed: () => _copyCode(context, roomCode),
+                      icon: const Icon(Icons.copy, size: 18),
+                      label: const Text('Copy code'),
+                    ),
+                  ],
                 ),
               ),
             Expanded(
@@ -299,6 +316,15 @@ class _ActiveScaffold extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+
+  void _copyCode(BuildContext context, String roomCode) {
+    unawaited(
+      Clipboard.setData(ClipboardData(text: CallCode.format(roomCode))),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Meeting code copied')),
     );
   }
 }

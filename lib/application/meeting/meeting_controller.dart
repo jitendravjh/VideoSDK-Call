@@ -29,27 +29,44 @@ class MeetingController extends _$MeetingController {
 
   bool _micOn = true;
   bool _cameraOn = false;
+  Timer? _connectTimer;
 
   @override
   MeetingState build() {
     final sub = _signaling.messages.listen(_onSignal);
-    ref.onDispose(sub.cancel);
+    ref.onDispose(() {
+      _connectTimer?.cancel();
+      unawaited(sub.cancel());
+    });
     return const MeetingState.idle();
+  }
+
+  // If the server never acknowledges host/join (e.g. an old build with no
+  // meeting support), fail with a message rather than spinning forever.
+  void _startConnectTimeout() {
+    _connectTimer?.cancel();
+    _connectTimer = Timer(const Duration(seconds: 12), () {
+      if (state is MeetingConnecting) {
+        unawaited(_fail('Could not reach the meeting'));
+      }
+    });
   }
 
   User? get _self => ref.read(sessionControllerProvider);
 
-  /// Opens a meeting keyed by the local user's own code.
+  /// Hosts a new meeting; the server generates and returns its code.
   Future<void> host({bool video = false}) async {
     final self = _self;
     if (self == null || self.userId.isEmpty || state is! MeetingIdle) return;
     _micOn = true;
     _cameraOn = video;
-    state = MeetingState.connecting(roomCode: self.userId, isHost: true);
+    // The code is unknown until the server replies with `meeting-joined`.
+    state = const MeetingState.connecting(roomCode: '', isHost: true);
     _bindEngine();
     try {
       await _engine.openLocalMedia(audio: true, video: video);
       _signaling.send(const SignalMessage.meetingHost());
+      _startConnectTimeout();
     } on Object catch (error, stackTrace) {
       _log.error('host failed', error, stackTrace);
       await _fail('Could not start the meeting');
@@ -68,6 +85,7 @@ class MeetingController extends _$MeetingController {
     try {
       await _engine.openLocalMedia(audio: true, video: video);
       _signaling.send(SignalMessage.meetingJoin(roomCode: roomCode));
+      _startConnectTimeout();
     } on Object catch (error, stackTrace) {
       _log.error('join failed', error, stackTrace);
       await _fail('Could not join the meeting');
@@ -75,6 +93,7 @@ class MeetingController extends _$MeetingController {
   }
 
   Future<void> leave() async {
+    _connectTimer?.cancel();
     final code = state.roomCode;
     if (code != null) {
       _signaling.send(SignalMessage.meetingLeave(roomCode: code));
@@ -139,6 +158,7 @@ class MeetingController extends _$MeetingController {
   }
 
   Future<void> _onJoined(String roomCode, List<User> peers) async {
+    _connectTimer?.cancel();
     final isHost = state.isHost;
     state = MeetingState.active(
       roomCode: roomCode,
@@ -226,11 +246,13 @@ class MeetingController extends _$MeetingController {
   }
 
   Future<void> _onError(String reason) async {
+    _connectTimer?.cancel();
     await _engine.closeAll();
     state = MeetingState.ended(reason: _reasonLabel(reason));
   }
 
   Future<void> _fail(String message) async {
+    _connectTimer?.cancel();
     await _engine.closeAll();
     state = MeetingState.ended(reason: message);
   }

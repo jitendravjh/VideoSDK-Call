@@ -58,19 +58,19 @@ void main() {
   MeetingController notifier() =>
       container.read(meetingControllerProvider.notifier);
 
-  test('hosting opens a meeting keyed by the local code', () async {
+  test('hosting adopts the server-assigned meeting code', () async {
     await notifier().host();
     expect(read(), isA<MeetingConnecting>());
     expect(signaling.sent.whereType<MeetingHostMessage>(), hasLength(1));
 
     signaling.emit(
-      const SignalMessage.meetingJoined(roomCode: 'ALICE1', peers: []),
+      const SignalMessage.meetingJoined(roomCode: 'MEET01', peers: []),
     );
     await _pump();
 
     final state = read();
     expect(state, isA<MeetingActive>());
-    expect((state as MeetingActive).roomCode, 'ALICE1');
+    expect((state as MeetingActive).roomCode, 'MEET01');
     expect(state.isHost, isTrue);
     expect(state.participants, isEmpty);
   });

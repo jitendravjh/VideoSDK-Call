@@ -75,7 +75,7 @@ class LobbyScreen extends ConsumerWidget {
                     Expanded(
                       child: FilledButton.tonalIcon(
                         onPressed: (self != null && self.userId.isNotEmpty)
-                            ? () => _showMeetingDialog(context, ref, self)
+                            ? () => _showMeetingDialog(context, ref)
                             : null,
                         icon: const Icon(Icons.groups),
                         label: const Text('Meeting'),
@@ -164,15 +164,11 @@ class LobbyScreen extends ConsumerWidget {
     _startCall(context, peer);
   }
 
-  Future<void> _showMeetingDialog(
-    BuildContext context,
-    WidgetRef ref,
-    User self,
-  ) async {
+  Future<void> _showMeetingDialog(BuildContext context, WidgetRef ref) async {
     final meeting = ref.read(meetingControllerProvider.notifier);
     final result = await showDialog<({String action, String code})>(
       context: context,
-      builder: (context) => _MeetingDialog(code: self.userId),
+      builder: (context) => const _MeetingDialog(),
     );
     if (result == null || !context.mounted) return;
 
@@ -352,14 +348,12 @@ class _JoinDialogState extends State<_JoinDialog> {
   }
 }
 
-/// Popup for group meetings: shows the user's shareable meeting code with a
-/// Host button, and a field to join an existing meeting by code. Pops a record
-/// describing the chosen action; the lobby then requests permission and drives
-/// the meeting controller.
+/// Popup for group meetings: host a new meeting (the server generates and
+/// returns its code, shown in-meeting), or join an existing one by code. Pops a
+/// record describing the chosen action; the lobby then requests permission and
+/// drives the meeting controller.
 class _MeetingDialog extends StatefulWidget {
-  const _MeetingDialog({required this.code});
-
-  final String code;
+  const _MeetingDialog();
 
   @override
   State<_MeetingDialog> createState() => _MeetingDialogState();
@@ -383,61 +377,45 @@ class _MeetingDialogState extends State<_MeetingDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final ready = widget.code.isNotEmpty;
     return AlertDialog(
       title: const Text('Meeting'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'YOUR MEETING CODE',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-              letterSpacing: 1.4,
-              fontWeight: FontWeight.w600,
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Start a meeting and share the code it gives you.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            ready ? CallCode.format(widget.code) : '------',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              letterSpacing: 3,
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: _host,
+              icon: const Icon(Icons.groups),
+              label: const Text('Host meeting'),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Host, then share this code so others can join.',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: scheme.onSurfaceVariant,
+            const SizedBox(height: 20),
+            Text(
+              'Or join a meeting',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: ready ? _host : null,
-            icon: const Icon(Icons.groups),
-            label: const Text('Host meeting'),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Or join a meeting',
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
+            const SizedBox(height: 8),
+            TextField(
+              controller: _controller,
+              textCapitalization: TextCapitalization.characters,
+              textInputAction: TextInputAction.go,
+              decoration: const InputDecoration(
+                hintText: 'Enter meeting code',
+                prefixIcon: Icon(Icons.dialpad),
+              ),
+              onSubmitted: (_) => _join(),
             ),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _controller,
-            textCapitalization: TextCapitalization.characters,
-            textInputAction: TextInputAction.go,
-            decoration: const InputDecoration(
-              hintText: 'Enter meeting code',
-              prefixIcon: Icon(Icons.dialpad),
-            ),
-            onSubmitted: (_) => _join(),
-          ),
-        ],
+          ],
+        ),
       ),
       actions: [
         TextButton(

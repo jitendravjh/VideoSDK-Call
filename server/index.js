@@ -47,6 +47,16 @@ function uniqueCode() {
   return code;
 }
 
+// A fresh meeting-room code, distinct from every live user code and room code so
+// the two namespaces never collide.
+function uniqueRoomCode() {
+  let code = randomCode();
+  while (rooms.has(code) || socketByUser.has(code)) {
+    code = randomCode();
+  }
+  return code;
+}
+
 function presenceList() {
   return [...users.values()].map((u) => ({
     userId: u.userId,
@@ -90,10 +100,9 @@ function meetingMembers(roomCode) {
   });
 }
 
-// Removes a user from their room and tells the remaining members. The room is
-// keyed by the host's code, so if the host themself leaves, the meeting ends for
-// everyone (evict the members) rather than leaving a headless room that would
-// orphan members or alias a future code. Safe to call for a user in no room.
+// Removes a user from their room and tells the remaining members. The meeting
+// lives on under its generated code until the last member leaves (the host is
+// not special). Deletes the room once empty. Safe to call for a user in no room.
 function leaveRoom(userId) {
   const roomCode = roomByUser.get(userId);
   if (!roomCode) return;
@@ -101,16 +110,6 @@ function leaveRoom(userId) {
   const set = rooms.get(roomCode);
   if (!set) return;
   set.delete(userId);
-
-  if (userId === roomCode) {
-    for (const member of set) {
-      roomByUser.delete(member);
-      relayTo(member, 'meeting-error', { reason: 'host-left' });
-    }
-    rooms.delete(roomCode);
-    return;
-  }
-
   for (const member of set) {
     relayTo(member, 'meeting-peer-left', { roomCode, userId });
   }
@@ -202,16 +201,18 @@ io.on('connection', (socket) => {
     relayTo(to, 'call-end', { from, to });
   });
 
-  // The host opens a room keyed by their own code; others join with that code.
+  // Hosting generates a fresh meeting code (independent of the host's own code)
+  // and opens a room under it; others join with that code.
   socket.on('meeting-host', () => {
     const user = users.get(socket.id);
     if (!user) return;
     const { userId } = user;
     leaveRoom(userId);
-    rooms.set(userId, new Set([userId]));
-    roomByUser.set(userId, userId);
-    socket.emit('meeting-joined', { roomCode: userId, peers: [] });
-    console.log(`meeting-host ${userId}`);
+    const roomCode = uniqueRoomCode();
+    rooms.set(roomCode, new Set([userId]));
+    roomByUser.set(userId, roomCode);
+    socket.emit('meeting-joined', { roomCode, peers: [] });
+    console.log(`meeting-host ${userId} -> ${roomCode}`);
   });
 
   socket.on('meeting-join', (data) => {
