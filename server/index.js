@@ -4,6 +4,14 @@ import os from 'node:os';
 import { Bonjour } from 'bonjour-service';
 import { Server } from 'socket.io';
 
+// Load server/.env (Cloudflare TURN credentials) when present; otherwise fall
+// back to the real process environment. Built in since Node 20.12.
+try {
+  process.loadEnvFile();
+} catch {
+  // No .env file: rely on whatever is already in the environment.
+}
+
 const PORT = process.env.PORT || 3000;
 const MAX_CHAT_LEN = 2000;
 
