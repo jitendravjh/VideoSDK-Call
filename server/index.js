@@ -1,7 +1,9 @@
+import { randomUUID } from 'node:crypto';
 import http from 'http';
 import { Server } from 'socket.io';
 
 const PORT = process.env.PORT || 3000;
+const MAX_CHAT_LEN = 2000;
 
 const httpServer = http.createServer((req, res) => {
   if (req.url === '/health') {
@@ -280,8 +282,10 @@ io.on('connection', (socket) => {
   });
 
   // Group chat is relayed through the room rather than peer data channels, so it
-  // reaches everyone reliably. The sender's id/name are stamped from the trusted
-  // user record so they cannot be spoofed.
+  // reaches everyone reliably. The relayed message is rebuilt from an explicit
+  // allowlist: sender id/name and the timestamp are stamped from the trusted
+  // server side (only the text and an optional client id are accepted), so a
+  // client cannot spoof the sender, inject extra fields, or amplify a huge body.
   socket.on('meeting-chat', (data) => {
     const user = users.get(socket.id);
     if (!user) return;
@@ -290,11 +294,19 @@ io.on('connection', (socket) => {
     const set = rooms.get(roomCode);
     if (!set) return;
     const incoming = data?.message;
-    if (!incoming || typeof incoming.text !== 'string') return;
+    const text = incoming?.text;
+    if (typeof text !== 'string' || text.length === 0) return;
+    if (text.length > MAX_CHAT_LEN) return;
+    const id =
+      typeof incoming.id === 'string' && incoming.id.length <= 64
+        ? incoming.id
+        : randomUUID();
     const message = {
-      ...incoming,
+      id,
+      text,
       senderId: user.userId,
       senderName: user.displayName,
+      sentAt: new Date().toISOString(),
     };
     for (const member of set) {
       if (member !== user.userId) {
