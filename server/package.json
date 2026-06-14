@@ -5,7 +5,8 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "bash start.sh",
+    "server": "node index.js",
     "dev": "node --watch index.js"
   },
   "author": "Jitendra Verma <jitendravjh@gmail.com>",
