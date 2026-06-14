@@ -29,6 +29,7 @@ class _MeetingScreenState extends ConsumerState<MeetingScreen> {
   bool _muted = false;
   bool _speakerOn = true;
   bool _cameraOn = false;
+  String? _focusedId;
 
   @override
   void initState() {
@@ -111,6 +112,8 @@ class _MeetingScreenState extends ConsumerState<MeetingScreen> {
           muted: _muted,
           speakerOn: _speakerOn,
           cameraOn: _cameraOn,
+          focusedId: _focusedId,
+          onFocus: (id) => setState(() => _focusedId = id),
           onToggleMute: _toggleMute,
           onToggleSpeaker: _toggleSpeaker,
           onToggleCamera: _toggleCamera,
@@ -197,6 +200,8 @@ class _ActiveScaffold extends ConsumerWidget {
     required this.muted,
     required this.speakerOn,
     required this.cameraOn,
+    required this.focusedId,
+    required this.onFocus,
     required this.onToggleMute,
     required this.onToggleSpeaker,
     required this.onToggleCamera,
@@ -208,38 +213,51 @@ class _ActiveScaffold extends ConsumerWidget {
   final bool muted;
   final bool speakerOn;
   final bool cameraOn;
+  final String? focusedId;
+  final ValueChanged<String?> onFocus;
   final VoidCallback onToggleMute;
   final VoidCallback onToggleSpeaker;
   final VoidCallback onToggleCamera;
   final VoidCallback onFlip;
   final VoidCallback onLeave;
 
+  static const _selfId = '__you__';
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final engine = ref.watch(meshEngineProvider);
     final participants = state.participants;
     final roomCode = state.roomCode ?? '';
 
-    final tiles = <Widget>[
-      _Tile(
+    // "You" is always pinned first.
+    final tiles = <_TileData>[
+      _TileData(
+        id: _selfId,
         name: 'You',
         renderer: engine.localRenderer,
         showVideo: cameraOn,
         mirror: true,
         micOn: !muted,
-        connecting: false,
       ),
-      for (final participant in participants)
-        _Tile(
-          name: participant.displayName,
-          renderer: engine.rendererFor(participant.userId),
-          showVideo: participant.hasVideo && participant.connected,
+      for (final p in participants)
+        _TileData(
+          id: p.userId,
+          name: p.displayName,
+          renderer: engine.rendererFor(p.userId),
+          showVideo: p.hasVideo,
           mirror: false,
-          micOn: participant.micOn,
-          connecting: !participant.connected,
+          micOn: p.micOn,
         ),
     ];
+
+    // Resolve the focused tile, ignoring a stale id for someone who left.
+    _TileData? focused;
+    for (final t in tiles) {
+      if (t.id == focusedId) {
+        focused = t;
+        break;
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -258,47 +276,13 @@ class _ActiveScaffold extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
-            if (participants.isEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: Column(
-                  children: [
-                    Text(
-                      'Waiting for others to join',
-                      style: theme.textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Share this meeting code',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      CallCode.format(roomCode),
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 3,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    OutlinedButton.icon(
-                      onPressed: () => _copyCode(context, roomCode),
-                      icon: const Icon(Icons.copy, size: 18),
-                      label: const Text('Copy code'),
-                    ),
-                  ],
-                ),
-              ),
+            if (participants.isEmpty) _CodeBanner(roomCode: roomCode),
             Expanded(
-              child: GridView.count(
-                padding: const EdgeInsets.all(16),
-                crossAxisCount: tiles.length <= 1 ? 1 : 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 0.85,
-                children: tiles,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: focused != null
+                    ? _focusedLayout(tiles, focused)
+                    : _gridLayout(tiles),
               ),
             ),
             Padding(
@@ -320,6 +304,70 @@ class _ActiveScaffold extends ConsumerWidget {
     );
   }
 
+  // Tap to expand any tile to fill the screen; the rest become a strip.
+  Widget _focusedLayout(List<_TileData> tiles, _TileData focused) {
+    final others = [
+      for (final t in tiles)
+        if (t.id != focused.id) t,
+    ];
+    return Column(
+      children: [
+        Expanded(
+          child: _Tile(data: focused, onTap: () => onFocus(null)),
+        ),
+        if (others.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 96,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: others.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemBuilder: (_, i) => AspectRatio(
+                aspectRatio: 0.8,
+                child: _Tile(
+                  data: others[i],
+                  onTap: () => onFocus(others[i].id),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _gridLayout(List<_TileData> tiles) {
+    // Alone: a single tile that fills the available height.
+    if (tiles.length == 1) {
+      return _Tile(data: tiles.first);
+    }
+    // Two participants: stacked, each half the height, no scrolling.
+    if (tiles.length == 2) {
+      return Column(
+        children: [
+          Expanded(
+            child: _Tile(data: tiles[0], onTap: () => onFocus(tiles[0].id)),
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: _Tile(data: tiles[1], onTap: () => onFocus(tiles[1].id)),
+          ),
+        ],
+      );
+    }
+    // More: a two-per-row grid that scrolls when it overflows.
+    return GridView.count(
+      crossAxisCount: 2,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      childAspectRatio: 0.85,
+      children: [
+        for (final t in tiles) _Tile(data: t, onTap: () => onFocus(t.id)),
+      ],
+    );
+  }
+
   void _copyCode(BuildContext context, String roomCode) {
     unawaited(
       Clipboard.setData(ClipboardData(text: CallCode.format(roomCode))),
@@ -330,46 +378,107 @@ class _ActiveScaffold extends ConsumerWidget {
   }
 }
 
-class _Tile extends StatelessWidget {
-  const _Tile({
+/// A compact, single-row banner shown while the host is alone, so the local
+/// preview tile gets the rest of the height.
+class _CodeBanner extends StatelessWidget {
+  const _CodeBanner({required this.roomCode});
+
+  final String roomCode;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      child: Material(
+        color: scheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 4, 4, 4),
+          child: Row(
+            children: [
+              Icon(Icons.groups, size: 18, color: scheme.onSecondaryContainer),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Share code ${CallCode.format(roomCode)} to invite others',
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSecondaryContainer,
+                  ),
+                ),
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Copy code',
+                color: scheme.onSecondaryContainer,
+                icon: const Icon(Icons.copy, size: 18),
+                onPressed: () {
+                  unawaited(
+                    Clipboard.setData(
+                      ClipboardData(text: CallCode.format(roomCode)),
+                    ),
+                  );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Meeting code copied')),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One meeting tile: shows the participant's video when available, otherwise
+/// their avatar (no spinner — an audio-only or still-connecting peer simply
+/// shows their avatar). Optionally tappable to toggle the focused full view.
+class _TileData {
+  const _TileData({
+    required this.id,
     required this.name,
     required this.renderer,
     required this.showVideo,
     required this.mirror,
     required this.micOn,
-    required this.connecting,
   });
 
+  final String id;
   final String name;
   final RTCVideoRenderer? renderer;
   final bool showVideo;
   final bool mirror;
   final bool micOn;
-  final bool connecting;
+}
+
+class _Tile extends StatelessWidget {
+  const _Tile({required this.data, this.onTap});
+
+  final _TileData data;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final localRenderer = renderer;
-    return ClipRRect(
+    final renderer = data.renderer;
+    final tile = ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: ColoredBox(
         color: theme.colorScheme.surfaceContainerHighest,
         child: Stack(
           fit: StackFit.expand,
           children: [
-            if (showVideo && localRenderer != null)
+            if (data.showVideo && renderer != null)
               RTCVideoView(
-                localRenderer,
-                mirror: mirror,
+                renderer,
+                mirror: data.mirror,
                 objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
               )
             else
-              Center(
-                child: connecting
-                    ? const CircularProgressIndicator()
-                    : UserAvatar(name: name, radius: 32),
-              ),
+              Center(child: UserAvatar(name: data.name, radius: 32)),
             Positioned(
               left: 8,
               right: 8,
@@ -389,7 +498,7 @@ class _Tile extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (!micOn) ...[
+                          if (!data.micOn) ...[
                             const Icon(
                               Icons.mic_off,
                               size: 14,
@@ -399,7 +508,7 @@ class _Tile extends StatelessWidget {
                           ],
                           Flexible(
                             child: Text(
-                              name,
+                              data.name,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(color: Colors.white),
                             ),
@@ -415,5 +524,7 @@ class _Tile extends StatelessWidget {
         ),
       ),
     );
+    if (onTap == null) return tile;
+    return GestureDetector(onTap: onTap, child: tile);
   }
 }
