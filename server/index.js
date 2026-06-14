@@ -95,10 +95,11 @@ io.on('connection', (socket) => {
     socketByUser.set(userId, socket.id);
 
     socket.emit('registered', { user: { userId, displayName } });
-    socket.emit('presence', { users: presenceList() });
-    socket.broadcast.emit('user-joined', {
-      user: { userId, displayName },
-    });
+    // Broadcast the full authoritative roster to everyone (not just the
+    // joiner) so every client converges on the same list across reconnects and
+    // missed deltas. Without this, a peer reached purely by code is never
+    // advertised to the caller and keeps looking offline even after a call.
+    io.emit('presence', { users: presenceList() });
 
     console.log(`register ${displayName} (${userId})`);
   });

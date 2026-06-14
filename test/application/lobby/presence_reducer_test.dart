@@ -61,13 +61,21 @@ void main() {
     expect(ids(result), ['BOBBB2']);
   });
 
-  test('unrelated messages leave the list unchanged', () {
+  test('call lifecycle messages never drop a peer from presence', () {
     const current = [alice, bob];
-    final result = PresenceReducer.apply(
-      current: current,
-      message: const SignalMessage.offer(from: 'x', to: 'y', sdp: 'z'),
-      selfId: selfId,
-    );
-    expect(result, same(current));
+    const events = <SignalMessage>[
+      SignalMessage.offer(from: 'x', to: 'y', sdp: 'z'),
+      SignalMessage.answer(from: 'x', to: 'y', sdp: 'z'),
+      SignalMessage.decline(from: 'x', to: 'y'),
+      SignalMessage.callEnd(from: 'x', to: 'y'),
+      SignalMessage.callEnd(from: 'x', to: 'y', reason: 'peer-left'),
+    ];
+    for (final event in events) {
+      expect(
+        PresenceReducer.apply(current: current, message: event, selfId: selfId),
+        same(current),
+        reason: '${event.runtimeType} must not mutate presence',
+      );
+    }
   });
 }
