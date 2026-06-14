@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:meet_videosdk/data/session/session_store.dart';
 import 'package:meet_videosdk/presentation/common/app_router.dart';
 import 'package:meet_videosdk/presentation/common/app_theme.dart';
+import 'package:meet_videosdk/presentation/common/call_sound_scope.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
@@ -28,6 +29,8 @@ class VideoSdkApp extends ConsumerWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       routerConfig: router,
+      builder: (context, child) =>
+          CallSoundScope(child: child ?? const SizedBox.shrink()),
     );
   }
 }

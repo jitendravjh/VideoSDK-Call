@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_ringtone_player: ^4.0.0
   flutter_riverpod: ^3.3.2
   flutter_webrtc: ^1.5.0
   freezed_annotation: ^3.1.0
