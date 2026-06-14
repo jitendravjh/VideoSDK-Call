@@ -5,12 +5,14 @@ import 'package:meet_videosdk/application/call/remote_media_controller.dart';
 import 'package:meet_videosdk/application/history/call_history_controller.dart';
 import 'package:meet_videosdk/application/lobby/lobby_controller.dart';
 import 'package:meet_videosdk/application/lobby/session_controller.dart';
+import 'package:meet_videosdk/application/meeting/meeting_controller.dart';
 import 'package:meet_videosdk/core/call_code.dart';
 import 'package:meet_videosdk/core/logging.dart';
 import 'package:meet_videosdk/data/models/call_record.dart';
 import 'package:meet_videosdk/data/models/call_state.dart';
 import 'package:meet_videosdk/data/models/chat_message.dart';
 import 'package:meet_videosdk/data/models/ice_candidate_payload.dart';
+import 'package:meet_videosdk/data/models/meeting_state.dart';
 import 'package:meet_videosdk/data/models/signal_message.dart';
 import 'package:meet_videosdk/data/models/user.dart';
 import 'package:meet_videosdk/data/signaling/signaling_providers.dart';
@@ -244,7 +246,10 @@ class CallController extends _$CallController {
 
   void _onIncomingOffer(String from, String sdp, String? fromName) {
     final self = _self;
-    if (state is! Idle) {
+    // Busy if already on a 1:1 call or in a group meeting: decline so the
+    // incoming call cannot yank the user out of an active meeting.
+    final inMeeting = ref.read(meetingControllerProvider) is! MeetingIdle;
+    if (state is! Idle || inMeeting) {
       if (self != null) {
         _signaling.send(SignalMessage.decline(from: self.userId, to: from));
       }
