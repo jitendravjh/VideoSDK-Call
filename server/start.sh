@@ -4,7 +4,10 @@
 # Ctrl+C to stop both.
 set -u
 
+cleaned=0
 cleanup() {
+  [ "$cleaned" = 1 ] && return
+  cleaned=1
   echo ""
   echo "stopping server and tunnel..."
   kill "${SERVER_PID:-}" "${TUNNEL_PID:-}" 2>/dev/null
