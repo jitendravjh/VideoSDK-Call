@@ -227,7 +227,7 @@ class MeetingController extends _$MeetingController {
     if (self == null) return;
     final offerer = MeetingReducer.shouldOffer(self.userId, peerId);
     if (!_engine.hasPeer(peerId)) {
-      await _engine.addPeer(peerId, asOfferer: offerer);
+      await _engine.addPeer(peerId);
     }
     // The peer may have left during addPeer; bail rather than negotiate a
     // connection that no longer exists.
@@ -249,7 +249,7 @@ class MeetingController extends _$MeetingController {
     final self = _self;
     if (self == null) return;
     if (!_engine.hasPeer(from)) {
-      await _engine.addPeer(from, asOfferer: false);
+      await _engine.addPeer(from);
     }
     if (!_engine.hasPeer(from)) return;
     _ensureParticipant(from, fromName);

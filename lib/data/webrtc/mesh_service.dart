@@ -119,19 +119,18 @@ class MeshService implements MeshEngine {
   bool hasPeer(String peerId) => _peers.containsKey(peerId);
 
   @override
-  Future<void> addPeer(String peerId, {required bool asOfferer}) {
+  Future<void> addPeer(String peerId) {
     if (_peers.containsKey(peerId)) return Future<void>.value();
     final existing = _adding[peerId];
     if (existing != null) return existing;
     final future = _addPeer(
       peerId,
-      asOfferer: asOfferer,
     ).whenComplete(() => _adding.remove(peerId));
     _adding[peerId] = future;
     return future;
   }
 
-  Future<void> _addPeer(String peerId, {required bool asOfferer}) async {
+  Future<void> _addPeer(String peerId) async {
     final pc = await createPeerConnection({
       'iceServers': AppConfig.iceServers,
       'sdpSemantics': 'unified-plan',
@@ -192,12 +191,16 @@ class MeshService implements MeshEngine {
       }
     }
 
-    if (asOfferer) {
-      final channel = await pc.createDataChannel('chat', RTCDataChannelInit());
-      _bindChannel(peerId, link, channel);
-    } else {
-      pc.onDataChannel = (channel) => _bindChannel(peerId, link, channel);
-    }
+    // A negotiated channel (same id on both peers) avoids relying on the remote
+    // `onDataChannel` event firing, which was unreliable in the mesh; both sides
+    // simply open it and it works once the SCTP transport is up.
+    final channel = await pc.createDataChannel(
+      'chat',
+      RTCDataChannelInit()
+        ..negotiated = true
+        ..id = 0,
+    );
+    _bindChannel(peerId, link, channel);
   }
 
   @override

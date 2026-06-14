@@ -33,10 +33,11 @@ abstract class MeshEngine {
   /// Opens the single shared local capture. Call once before adding peers.
   Future<void> openLocalMedia({required bool audio, required bool video});
 
-  /// Creates a peer connection for [peerId] and attaches the shared local
-  /// tracks. When [asOfferer] it also opens the chat/data channel; the caller is
-  /// then expected to follow with [createOffer]. Safe to call once per peer.
-  Future<void> addPeer(String peerId, {required bool asOfferer});
+  /// Creates a peer connection for [peerId], attaches the shared local tracks,
+  /// and opens a negotiated data channel (both peers open it with the same id,
+  /// so chat/media-state never depend on `onDataChannel` timing). Safe to call
+  /// once per peer.
+  Future<void> addPeer(String peerId);
 
   bool hasPeer(String peerId);
 

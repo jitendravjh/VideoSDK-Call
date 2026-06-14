@@ -318,7 +318,7 @@ class _FakeMesh implements MeshEngine {
   }) async {}
 
   @override
-  Future<void> addPeer(String peerId, {required bool asOfferer}) async {
+  Future<void> addPeer(String peerId) async {
     peers.add(peerId);
   }
 
