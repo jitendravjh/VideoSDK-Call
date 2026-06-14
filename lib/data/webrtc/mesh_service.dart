@@ -31,6 +31,14 @@ class MeshService implements MeshEngine {
   bool _localRendererInitialized = false;
   final Map<String, _PeerLink> _peers = {};
 
+  // In-flight addPeer per peer, so two concurrent (unawaited) signal handlers
+  // for the same peer coalesce onto one connection instead of leaking a second.
+  final Map<String, Future<void>> _adding = {};
+
+  // ICE that arrived before the peer link existed; drained into the link's
+  // pending queue once addPeer creates it (otherwise it would be dropped).
+  final Map<String, List<RTCIceCandidate>> _orphanCandidates = {};
+
   // Guards an in-flight getUserMedia against a teardown that beats it home.
   int _mediaGeneration = 0;
 
@@ -101,17 +109,38 @@ class MeshService implements MeshEngine {
   bool hasPeer(String peerId) => _peers.containsKey(peerId);
 
   @override
-  Future<void> addPeer(String peerId, {required bool asOfferer}) async {
-    if (_peers.containsKey(peerId)) return;
+  Future<void> addPeer(String peerId, {required bool asOfferer}) {
+    if (_peers.containsKey(peerId)) return Future<void>.value();
+    final existing = _adding[peerId];
+    if (existing != null) return existing;
+    final future = _addPeer(
+      peerId,
+      asOfferer: asOfferer,
+    ).whenComplete(() => _adding.remove(peerId));
+    _adding[peerId] = future;
+    return future;
+  }
 
+  Future<void> _addPeer(String peerId, {required bool asOfferer}) async {
     final pc = await createPeerConnection({
       'iceServers': AppConfig.iceServers,
       'sdpSemantics': 'unified-plan',
     });
     final renderer = RTCVideoRenderer();
     await renderer.initialize();
+    // Another path won the slot (or the peer left) while we awaited: discard
+    // this connection rather than orphaning it outside _peers.
+    if (_peers.containsKey(peerId)) {
+      await pc.close();
+      await renderer.dispose();
+      return;
+    }
     final link = _PeerLink(pc, renderer);
     _peers[peerId] = link;
+    final orphans = _orphanCandidates.remove(peerId);
+    if (orphans != null) {
+      link.pendingCandidates.addAll(orphans);
+    }
 
     pc
       ..onIceCandidate = (candidate) {
@@ -197,13 +226,18 @@ class MeshService implements MeshEngine {
     String peerId,
     IceCandidatePayload payload,
   ) async {
-    final link = _peers[peerId];
-    if (link == null) return;
     final candidate = RTCIceCandidate(
       payload.candidate,
       payload.sdpMid,
       payload.sdpMLineIndex,
     );
+    final link = _peers[peerId];
+    if (link == null) {
+      // The peer link is still being built; hold the candidate so it is not
+      // lost, and addPeer will drain it into the pending queue.
+      _orphanCandidates.putIfAbsent(peerId, () => []).add(candidate);
+      return;
+    }
     if (!link.remoteDescriptionSet) {
       link.pendingCandidates.add(candidate);
       return;
@@ -216,6 +250,7 @@ class MeshService implements MeshEngine {
 
   @override
   Future<void> removePeer(String peerId) async {
+    _orphanCandidates.remove(peerId);
     final link = _peers.remove(peerId);
     if (link == null) return;
     await link.channel?.close();
@@ -273,6 +308,7 @@ class MeshService implements MeshEngine {
   @override
   Future<void> closeAll() async {
     _mediaGeneration++;
+    _orphanCandidates.clear();
     for (final peerId in _peers.keys.toList()) {
       await removePeer(peerId);
     }

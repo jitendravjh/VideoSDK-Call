@@ -41,7 +41,7 @@ function randomCode() {
 
 function uniqueCode() {
   let code = randomCode();
-  while (socketByUser.has(code)) {
+  while (socketByUser.has(code) || rooms.has(code)) {
     code = randomCode();
   }
   return code;
@@ -90,8 +90,10 @@ function meetingMembers(roomCode) {
   });
 }
 
-// Removes a user from their room and tells the remaining members. Deletes the
-// room once empty. Safe to call for a user who is not in any room.
+// Removes a user from their room and tells the remaining members. The room is
+// keyed by the host's code, so if the host themself leaves, the meeting ends for
+// everyone (evict the members) rather than leaving a headless room that would
+// orphan members or alias a future code. Safe to call for a user in no room.
 function leaveRoom(userId) {
   const roomCode = roomByUser.get(userId);
   if (!roomCode) return;
@@ -99,6 +101,16 @@ function leaveRoom(userId) {
   const set = rooms.get(roomCode);
   if (!set) return;
   set.delete(userId);
+
+  if (userId === roomCode) {
+    for (const member of set) {
+      roomByUser.delete(member);
+      relayTo(member, 'meeting-error', { reason: 'host-left' });
+    }
+    rooms.delete(roomCode);
+    return;
+  }
+
   for (const member of set) {
     relayTo(member, 'meeting-peer-left', { roomCode, userId });
   }
@@ -210,6 +222,15 @@ io.on('connection', (socket) => {
     const set = rooms.get(roomCode);
     if (!set) {
       socket.emit('meeting-error', { reason: 'no-such-meeting' });
+      return;
+    }
+    // Already in this room (idempotent retry): re-send the roster without
+    // churning the other members with a spurious leave/join.
+    if (roomByUser.get(userId) === roomCode) {
+      socket.emit('meeting-joined', {
+        roomCode,
+        peers: meetingMembers(roomCode).filter((p) => p.userId !== userId),
+      });
       return;
     }
     leaveRoom(userId);

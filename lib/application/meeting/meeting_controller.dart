@@ -173,8 +173,11 @@ class MeetingController extends _$MeetingController {
     if (!_engine.hasPeer(peerId)) {
       await _engine.addPeer(peerId, asOfferer: offerer);
     }
-    if (offerer) {
+    // The peer may have left during addPeer; bail rather than negotiate a
+    // connection that no longer exists.
+    if (offerer && _engine.hasPeer(peerId)) {
       final sdp = await _engine.createOffer(peerId);
+      if (!_engine.hasPeer(peerId)) return;
       _signaling.send(
         SignalMessage.meetingOffer(
           from: self.userId,
@@ -192,9 +195,12 @@ class MeetingController extends _$MeetingController {
     if (!_engine.hasPeer(from)) {
       await _engine.addPeer(from, asOfferer: false);
     }
+    if (!_engine.hasPeer(from)) return;
     _ensureParticipant(from, fromName);
     await _engine.setRemoteDescription(from, sdp, 'offer');
+    if (!_engine.hasPeer(from)) return;
     final answer = await _engine.createAnswer(from);
+    if (!_engine.hasPeer(from)) return;
     _signaling.send(
       SignalMessage.meetingAnswer(
         from: self.userId,
@@ -281,6 +287,7 @@ class MeetingController extends _$MeetingController {
 
   String _reasonLabel(String reason) => switch (reason) {
     'no-such-meeting' => 'Meeting not found',
+    'host-left' => 'The host ended the meeting',
     _ => 'Meeting ended',
   };
 }

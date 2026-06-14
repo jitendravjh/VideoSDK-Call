@@ -314,7 +314,7 @@ class _ConnectedView extends ConsumerWidget {
             right: 0,
             child: Column(
               children: [
-                if (remoteHasVideo)
+                if (remoteHasVideo) ...[
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -334,6 +334,13 @@ class _ConnectedView extends ConsumerWidget {
                       ],
                     ],
                   ),
+                  Text(
+                    'Code ${CallCode.format(peer.userId)}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
                 Text(
                   _formatDuration(elapsed),
                   style: theme.textTheme.bodyMedium?.copyWith(

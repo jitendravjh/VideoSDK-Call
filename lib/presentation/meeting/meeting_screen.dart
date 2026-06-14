@@ -31,6 +31,7 @@ class _MeetingScreenState extends ConsumerState<MeetingScreen> {
     super.initState();
     // Group meetings default to speakerphone.
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       unawaited(
         ref
             .read(meetingControllerProvider.notifier)
