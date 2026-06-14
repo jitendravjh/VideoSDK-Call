@@ -24,6 +24,14 @@ class AppConfig {
     defaultValue: 3000,
   );
 
+  /// Whether a server location was pinned at build time. When false, the app
+  /// auto-discovers the server on the LAN via mDNS instead.
+  static bool get hasExplicitServer =>
+      _hostOverride.isNotEmpty || _urlOverride.isNotEmpty;
+
+  /// The mDNS/DNS-SD service type the server advertises and the app browses for.
+  static const String discoveryServiceType = '_videosdk._tcp';
+
   static String get signalingHost {
     if (_hostOverride.isNotEmpty) {
       return _hostOverride;

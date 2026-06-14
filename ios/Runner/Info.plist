@@ -8,6 +8,10 @@
 	<string>Microphone access is needed for voice and video calls.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Connects to the call signalling server running on your local network.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_videosdk._tcp</string>
+	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

@@ -11,6 +11,7 @@
   "author": "Jitendra Verma <jitendravjh@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "bonjour-service": "^1.4.1",
     "socket.io": "^4.8.1"
   }
 }

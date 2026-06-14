@@ -1,9 +1,24 @@
 import { randomUUID } from 'node:crypto';
 import http from 'http';
+import os from 'node:os';
+import { Bonjour } from 'bonjour-service';
 import { Server } from 'socket.io';
 
 const PORT = process.env.PORT || 3000;
 const MAX_CHAT_LEN = 2000;
+
+// Non-internal IPv4 addresses, so the operator can see (and apps can reach) the
+// server on the LAN.
+function lanAddresses() {
+  const result = [];
+  for (const nets of Object.values(os.networkInterfaces())) {
+    for (const net of nets ?? []) {
+      const isV4 = net.family === 'IPv4' || net.family === 4;
+      if (isV4 && !net.internal) result.push(net.address);
+    }
+  }
+  return result;
+}
 
 const httpServer = http.createServer((req, res) => {
   if (req.url === '/health') {
@@ -342,4 +357,20 @@ io.on('connection', (socket) => {
 
 httpServer.listen(PORT, () => {
   console.log(`Signalling server listening on port ${PORT}`);
+  for (const address of lanAddresses()) {
+    console.log(`  reachable on this network at http://${address}:${PORT}`);
+  }
+  // Advertise on the LAN (mDNS/Bonjour) so apps on the same Wi-Fi discover and
+  // connect automatically, with no host to type or build flag to pass.
+  try {
+    const bonjour = new Bonjour();
+    bonjour.publish({
+      name: 'VideoSDK Signalling',
+      type: 'videosdk',
+      port: Number(PORT),
+    });
+    console.log('  advertising via mDNS as _videosdk._tcp');
+  } catch (error) {
+    console.warn('mDNS advertise failed (auto-discovery disabled):', error);
+  }
 });

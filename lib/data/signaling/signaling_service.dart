@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:meet_videosdk/core/constants.dart';
 import 'package:meet_videosdk/core/logging.dart';
+import 'package:meet_videosdk/data/discovery/server_discovery.dart';
 import 'package:meet_videosdk/data/models/signal_message.dart';
 import 'package:meet_videosdk/data/models/user.dart';
 import 'package:meet_videosdk/data/signaling/signal_codec.dart';
@@ -19,9 +19,11 @@ class SignalingService implements SignalingTransport {
 
   final SignalCodec _codec = const SignalCodec();
   final AppLogger _log = AppLogger('SignalingService');
+  final ServerDiscovery _discovery = ServerDiscovery();
 
   io.Socket? _socket;
   User? _self;
+  bool _connecting = false;
 
   final StreamController<SignalMessage> _messages =
       StreamController<SignalMessage>.broadcast();
@@ -44,11 +46,34 @@ class SignalingService implements SignalingTransport {
       _registerSelf();
       return;
     }
-
+    if (_connecting) return;
+    _connecting = true;
     _setState(SignalingConnectionState.connecting);
+    // Resolve the server first (mDNS discovery on the LAN, or the compile-time
+    // override), then open the socket. The state stays "connecting" until a
+    // server is found, so the UI shows the same banner throughout.
+    unawaited(_resolveAndConnect());
+  }
+
+  Future<void> _resolveAndConnect() async {
+    final String url;
+    try {
+      url = await _discovery.resolve();
+    } on Object catch (error) {
+      _log.warn('server discovery failed: $error');
+      _connecting = false;
+      _setState(SignalingConnectionState.disconnected);
+      return;
+    }
+    // A disconnect/sign-out happened while discovering: abort.
+    if (_self == null) {
+      _connecting = false;
+      return;
+    }
+    _log.info('connecting to $url');
 
     final socket = io.io(
-      AppConfig.signalingUrl,
+      url,
       io.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
@@ -56,6 +81,7 @@ class SignalingService implements SignalingTransport {
           .build(),
     );
     _socket = socket;
+    _connecting = false;
 
     socket
       ..onConnect((_) {
@@ -98,6 +124,8 @@ class SignalingService implements SignalingTransport {
   @override
   void disconnect() {
     _self = null;
+    _connecting = false;
+    unawaited(_discovery.cancel());
     _socket
       ?..clearListeners()
       ..dispose();
