@@ -24,6 +24,9 @@ jobs:
 
       - run: flutter pub get
 
+      # Generated sources (*.g.dart / *.freezed.dart) are not checked in.
+      - run: dart run build_runner build --delete-conflicting-outputs
+
       - run: flutter build web --release --base-href "/${{ github.event.repository.name }}/"
 
       - uses: JamesIves/github-pages-deploy-action@v4
