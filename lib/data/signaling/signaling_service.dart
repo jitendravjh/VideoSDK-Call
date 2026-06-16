@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:meet_videosdk/core/constants.dart';
 import 'package:meet_videosdk/core/logging.dart';
 import 'package:meet_videosdk/data/discovery/server_discovery.dart';
 import 'package:meet_videosdk/data/models/signal_message.dart';
@@ -25,6 +26,7 @@ class SignalingService implements SignalingTransport {
   io.Socket? _socket;
   User? _self;
   bool _connecting = false;
+  Timer? _fallbackTimer;
 
   final StreamController<SignalMessage> _messages =
       StreamController<SignalMessage>.broadcast();
@@ -71,6 +73,11 @@ class SignalingService implements SignalingTransport {
       _connecting = false;
       return;
     }
+    _connecting = false;
+    _openSocket(url);
+  }
+
+  void _openSocket(String url) {
     _log.info('connecting to $url');
 
     final socket = io.io(
@@ -82,11 +89,11 @@ class SignalingService implements SignalingTransport {
           .build(),
     );
     _socket = socket;
-    _connecting = false;
 
     socket
       ..onConnect((_) {
         _log.info('connected');
+        _fallbackTimer?.cancel();
         _setState(SignalingConnectionState.connected);
         _registerSelf();
       })
@@ -109,6 +116,24 @@ class SignalingService implements SignalingTransport {
     }
 
     socket.connect();
+
+    // A discovered LAN server can advertise an address this device cannot reach
+    // (for example when the host is on phone tethering). If the connection does
+    // not come up soon, switch to the public server so the client is not stuck.
+    const fallback = AppConfig.fallbackUrl;
+    if (fallback.isNotEmpty && url != fallback) {
+      _fallbackTimer?.cancel();
+      _fallbackTimer = Timer(const Duration(seconds: 6), () {
+        if (_state == SignalingConnectionState.connected) return;
+        if (_socket != socket || _self == null) return;
+        _log.warn('$url did not connect, switching to $fallback');
+        socket
+          ..clearListeners()
+          ..dispose();
+        _socket = null;
+        _openSocket(fallback);
+      });
+    }
   }
 
   @override
@@ -126,6 +151,8 @@ class SignalingService implements SignalingTransport {
   void disconnect() {
     _self = null;
     _connecting = false;
+    _fallbackTimer?.cancel();
+    _fallbackTimer = null;
     unawaited(_discovery.cancel());
     _socket
       ?..clearListeners()
