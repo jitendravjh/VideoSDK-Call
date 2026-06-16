@@ -123,7 +123,7 @@ class SignalingService implements SignalingTransport {
     const fallback = AppConfig.fallbackUrl;
     if (fallback.isNotEmpty && url != fallback) {
       _fallbackTimer?.cancel();
-      _fallbackTimer = Timer(const Duration(seconds: 6), () {
+      _fallbackTimer = Timer(const Duration(seconds: 3), () {
         if (_state == SignalingConnectionState.connected) return;
         if (_socket != socket || _self == null) return;
         _log.warn('$url did not connect, switching to $fallback');
