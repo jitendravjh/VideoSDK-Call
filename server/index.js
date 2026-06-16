@@ -77,8 +77,15 @@ function lanAddresses() {
   for (const nets of Object.values(os.networkInterfaces())) {
     for (const net of nets ?? []) {
       const isV4 = net.family === 'IPv4' || net.family === 4;
-      // Skip loopback and link-local (169.254.x), which apps cannot reach.
-      if (isV4 && !net.internal && !net.address.startsWith('169.254.')) {
+      // Skip loopback, link-local (169.254.x), and the special-use 192.0.0.x
+      // range (seen on cellular tethering), none of which other LAN devices can
+      // reach.
+      const reachable =
+        isV4 &&
+        !net.internal &&
+        !net.address.startsWith('169.254.') &&
+        !net.address.startsWith('192.0.0.');
+      if (reachable) {
         result.push(net.address);
       }
     }
