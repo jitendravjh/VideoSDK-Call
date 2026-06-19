@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:meet_videosdk/data/session/session_store.dart';
-import 'package:meet_videosdk/presentation/common/app_router.dart';
-import 'package:meet_videosdk/presentation/common/app_theme.dart';
-import 'package:meet_videosdk/presentation/common/call_sound_scope.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:synq/data/session/session_store.dart';
+import 'package:synq/presentation/common/app_router.dart';
+import 'package:synq/presentation/common/app_theme.dart';
+import 'package:synq/presentation/common/call_sound_scope.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,19 +12,19 @@ Future<void> main() async {
   runApp(
     ProviderScope(
       overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-      child: const VideoSdkApp(),
+      child: const SynqApp(),
     ),
   );
 }
 
-class VideoSdkApp extends ConsumerWidget {
-  const VideoSdkApp({super.key});
+class SynqApp extends ConsumerWidget {
+  const SynqApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
-      title: 'VideoSDK Call',
+      title: 'Synq',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:meet_videosdk/data/native/mic_level_service.dart';
+import 'package:synq/data/native/mic_level_service.dart';
 
 /// Live microphone level. Driven by the native Kotlin meter on Android and by
 /// the peer connection's WebRTC audio stats on iOS, macOS, and web.

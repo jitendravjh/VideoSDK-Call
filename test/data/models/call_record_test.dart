@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meet_videosdk/data/models/call_record.dart';
+import 'package:synq/data/models/call_record.dart';
 
 void main() {
   test('CallRecord round-trips through JSON, enums included', () {

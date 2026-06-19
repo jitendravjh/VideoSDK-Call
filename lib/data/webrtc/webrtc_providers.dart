@@ -1,8 +1,8 @@
-import 'package:meet_videosdk/data/webrtc/mesh_engine.dart';
-import 'package:meet_videosdk/data/webrtc/mesh_service.dart';
-import 'package:meet_videosdk/data/webrtc/webrtc_engine.dart';
-import 'package:meet_videosdk/data/webrtc/webrtc_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:synq/data/webrtc/mesh_engine.dart';
+import 'package:synq/data/webrtc/mesh_service.dart';
+import 'package:synq/data/webrtc/webrtc_engine.dart';
+import 'package:synq/data/webrtc/webrtc_service.dart';
 
 part 'webrtc_providers.g.dart';
 

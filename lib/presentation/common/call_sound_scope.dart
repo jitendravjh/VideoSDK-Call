@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:meet_videosdk/application/call/call_controller.dart';
-import 'package:meet_videosdk/application/call/ring_action.dart';
-import 'package:meet_videosdk/data/audio/ringtone_providers.dart';
-import 'package:meet_videosdk/data/models/call_state.dart';
+import 'package:synq/application/call/call_controller.dart';
+import 'package:synq/application/call/ring_action.dart';
+import 'package:synq/data/audio/ringtone_providers.dart';
+import 'package:synq/data/models/call_state.dart';
 
 /// Drives the incoming-call ringtone from the call state. Mounted once above the
 /// router so it observes every transition, including the first ring that arrives

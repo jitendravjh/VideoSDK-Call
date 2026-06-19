@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:meet_videosdk/core/constants.dart';
-import 'package:meet_videosdk/core/logging.dart';
 import 'package:nsd/nsd.dart';
+import 'package:synq/core/constants.dart';
+import 'package:synq/core/logging.dart';
 
 /// Finds the signalling server on the local network via mDNS/DNS-SD, so the app
 /// connects with no host to type and no build flag.

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:meet_videosdk/application/lobby/session_controller.dart';
-import 'package:meet_videosdk/presentation/common/brand_logo.dart';
+import 'package:synq/application/lobby/session_controller.dart';
+import 'package:synq/presentation/common/brand_logo.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
@@ -53,7 +53,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   const Align(child: BrandLogo(size: 88)),
                   const SizedBox(height: 28),
                   Text(
-                    'VideoSDK Call',
+                    'Synq',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w700,

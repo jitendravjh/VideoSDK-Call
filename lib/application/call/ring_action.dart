@@ -1,4 +1,4 @@
-import 'package:meet_videosdk/data/models/call_state.dart';
+import 'package:synq/data/models/call_state.dart';
 
 /// What the ringtone should be doing for a given [CallState]. The phone rings
 /// only while an incoming call is pending; every other phase is silent (the

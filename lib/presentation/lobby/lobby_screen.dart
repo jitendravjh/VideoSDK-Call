@@ -4,17 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:meet_videosdk/application/history/call_history_controller.dart';
-import 'package:meet_videosdk/application/lobby/lobby_controller.dart';
-import 'package:meet_videosdk/application/lobby/session_controller.dart';
-import 'package:meet_videosdk/application/meeting/meeting_controller.dart';
-import 'package:meet_videosdk/core/call_code.dart';
-import 'package:meet_videosdk/core/permissions.dart';
-import 'package:meet_videosdk/data/models/user.dart';
-import 'package:meet_videosdk/presentation/common/app_router.dart';
-import 'package:meet_videosdk/presentation/common/brand_logo.dart';
-import 'package:meet_videosdk/presentation/common/connection_banner.dart';
-import 'package:meet_videosdk/presentation/history/call_history_tile.dart';
+import 'package:synq/application/history/call_history_controller.dart';
+import 'package:synq/application/lobby/lobby_controller.dart';
+import 'package:synq/application/lobby/session_controller.dart';
+import 'package:synq/application/meeting/meeting_controller.dart';
+import 'package:synq/core/call_code.dart';
+import 'package:synq/core/permissions.dart';
+import 'package:synq/data/models/user.dart';
+import 'package:synq/presentation/common/app_router.dart';
+import 'package:synq/presentation/common/brand_logo.dart';
+import 'package:synq/presentation/common/connection_banner.dart';
+import 'package:synq/presentation/history/call_history_tile.dart';
 
 class LobbyScreen extends ConsumerWidget {
   const LobbyScreen({super.key});
@@ -34,7 +34,7 @@ class LobbyScreen extends ConsumerWidget {
             const BrandLogo(size: 28),
             const SizedBox(width: 10),
             Text(
-              'VideoSDK Call',
+              'Synq',
               style: Theme.of(context).appBarTheme.titleTextStyle,
             ),
           ],

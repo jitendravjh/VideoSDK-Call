@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meet_videosdk/data/models/chat_message.dart';
-import 'package:meet_videosdk/data/webrtc/data_channel_codec.dart';
+import 'package:synq/data/models/chat_message.dart';
+import 'package:synq/data/webrtc/data_channel_codec.dart';
 
 void main() {
   test('chat message round-trips', () {

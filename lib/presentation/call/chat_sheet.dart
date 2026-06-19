@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:meet_videosdk/application/call/chat_controller.dart';
-import 'package:meet_videosdk/application/lobby/session_controller.dart';
-import 'package:meet_videosdk/core/call_code.dart';
-import 'package:meet_videosdk/data/models/chat_message.dart';
-import 'package:meet_videosdk/presentation/common/user_avatar.dart';
+import 'package:synq/application/call/chat_controller.dart';
+import 'package:synq/application/lobby/session_controller.dart';
+import 'package:synq/core/call_code.dart';
+import 'package:synq/data/models/chat_message.dart';
+import 'package:synq/presentation/common/user_avatar.dart';
 
 /// Shows the shared chat transcript. [onSend] forwards the typed text to the
 /// active controller (1:1 call or meeting), so one sheet serves both. When

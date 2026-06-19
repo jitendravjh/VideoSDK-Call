@@ -3,20 +3,20 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:meet_videosdk/application/call/chat_controller.dart';
-import 'package:meet_videosdk/application/lobby/session_controller.dart';
-import 'package:meet_videosdk/application/meeting/meeting_controller.dart';
-import 'package:meet_videosdk/data/models/chat_message.dart';
-import 'package:meet_videosdk/data/models/ice_candidate_payload.dart';
-import 'package:meet_videosdk/data/models/meeting_state.dart';
-import 'package:meet_videosdk/data/models/signal_message.dart';
-import 'package:meet_videosdk/data/models/user.dart';
-import 'package:meet_videosdk/data/session/session_store.dart';
-import 'package:meet_videosdk/data/signaling/signaling_providers.dart';
-import 'package:meet_videosdk/data/signaling/signaling_transport.dart';
-import 'package:meet_videosdk/data/webrtc/mesh_engine.dart';
-import 'package:meet_videosdk/data/webrtc/webrtc_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:synq/application/call/chat_controller.dart';
+import 'package:synq/application/lobby/session_controller.dart';
+import 'package:synq/application/meeting/meeting_controller.dart';
+import 'package:synq/data/models/chat_message.dart';
+import 'package:synq/data/models/ice_candidate_payload.dart';
+import 'package:synq/data/models/meeting_state.dart';
+import 'package:synq/data/models/signal_message.dart';
+import 'package:synq/data/models/user.dart';
+import 'package:synq/data/session/session_store.dart';
+import 'package:synq/data/signaling/signaling_providers.dart';
+import 'package:synq/data/signaling/signaling_transport.dart';
+import 'package:synq/data/webrtc/mesh_engine.dart';
+import 'package:synq/data/webrtc/webrtc_providers.dart';
 
 // self id 'ALICE1' sorts before 'BOBBB2' (so it offers Bob) and after 'AA0000'
 // (so it waits for Aaron's offer) — exercises both sides of the glare rule.

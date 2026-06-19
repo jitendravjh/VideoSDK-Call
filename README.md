@@ -1,4 +1,4 @@
-# VideoSDK Call
+# Synq
 
 A Flutter app for real time 1:1 and group voice and video calls over WebRTC, with live presence, shareable call codes, and in call chat. A small Node.js and Socket.IO server handles the signalling.
 
@@ -46,7 +46,7 @@ A physical Android phone (Android 16), an iPhone (iOS 26.5), and Chrome on the w
 
 ## How the app finds the server
 
-`ServerDiscovery` resolves the signalling URL without any flag. On mobile and desktop it uses mDNS to find the server, which advertises itself as `_videosdk._tcp` on the local network, and if nothing appears within five seconds it falls back to a public address. On the web, where there is no mDNS, it uses the public address directly over wss. That address is `AppConfig.fallbackUrl` in `lib/core/constants.dart`, and you can override it with `--dart-define=SIGNALING_URL=...` or `--dart-define=SIGNALING_HOST=<ip>`.
+`ServerDiscovery` resolves the signalling URL without any flag. On mobile and desktop it uses mDNS to find the server, which advertises itself as `_synq._tcp` on the local network, and if nothing appears within five seconds it falls back to a public address. On the web, where there is no mDNS, it uses the public address directly over wss. That address is `AppConfig.fallbackUrl` in `lib/core/constants.dart`, and you can override it with `--dart-define=SIGNALING_URL=...` or `--dart-define=SIGNALING_HOST=<ip>`.
 
 On the same Wi-Fi the call stays direct, which gives the best quality. On a different network it goes through the public server and a Cloudflare TURN relay, with credentials minted on the server from `server/.env`. STUN is always tried first, so a direct call still wins whenever it is possible.
 

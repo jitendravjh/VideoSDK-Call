@@ -1,8 +1,8 @@
-import 'package:meet_videosdk/application/lobby/presence_reducer.dart';
-import 'package:meet_videosdk/application/lobby/session_controller.dart';
-import 'package:meet_videosdk/data/models/user.dart';
-import 'package:meet_videosdk/data/signaling/signaling_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:synq/application/lobby/presence_reducer.dart';
+import 'package:synq/application/lobby/session_controller.dart';
+import 'package:synq/data/models/user.dart';
+import 'package:synq/data/signaling/signaling_providers.dart';
 
 part 'lobby_controller.g.dart';
 

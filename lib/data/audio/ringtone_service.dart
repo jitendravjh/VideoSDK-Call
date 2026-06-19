@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
-import 'package:meet_videosdk/core/logging.dart';
+import 'package:synq/core/logging.dart';
 
 /// Plays the incoming-call ringtone.
 ///

@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:meet_videosdk/data/signaling/signaling_service.dart';
-import 'package:meet_videosdk/data/signaling/signaling_transport.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:synq/data/signaling/signaling_service.dart';
+import 'package:synq/data/signaling/signaling_transport.dart';
 
 part 'signaling_providers.g.dart';
 

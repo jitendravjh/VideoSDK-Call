@@ -3,12 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:meet_videosdk/application/call/call_controller.dart';
-import 'package:meet_videosdk/core/call_code.dart';
-import 'package:meet_videosdk/core/permissions.dart';
-import 'package:meet_videosdk/data/models/user.dart';
-import 'package:meet_videosdk/data/webrtc/webrtc_providers.dart';
-import 'package:meet_videosdk/presentation/common/user_avatar.dart';
+import 'package:synq/application/call/call_controller.dart';
+import 'package:synq/core/call_code.dart';
+import 'package:synq/core/permissions.dart';
+import 'package:synq/data/models/user.dart';
+import 'package:synq/data/webrtc/webrtc_providers.dart';
+import 'package:synq/presentation/common/user_avatar.dart';
 
 class PrejoinScreen extends ConsumerStatefulWidget {
   const PrejoinScreen({required this.peer, this.incoming = false, super.key});

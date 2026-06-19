@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:meet_videosdk/core/formatting.dart';
-import 'package:meet_videosdk/data/models/call_record.dart';
-import 'package:meet_videosdk/data/models/user.dart';
-import 'package:meet_videosdk/presentation/common/app_router.dart';
-import 'package:meet_videosdk/presentation/common/user_avatar.dart';
+import 'package:synq/core/formatting.dart';
+import 'package:synq/data/models/call_record.dart';
+import 'package:synq/data/models/user.dart';
+import 'package:synq/presentation/common/app_router.dart';
+import 'package:synq/presentation/common/user_avatar.dart';
 
 /// A single call-history entry. Tapping it starts a call back to that peer.
 class CallHistoryTile extends StatelessWidget {

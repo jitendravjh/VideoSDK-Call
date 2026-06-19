@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:meet_videosdk/data/history/call_history_store.dart';
-import 'package:meet_videosdk/data/models/call_record.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:synq/data/history/call_history_store.dart';
+import 'package:synq/data/models/call_record.dart';
 
 part 'call_history_controller.g.dart';
 

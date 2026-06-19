@@ -1,5 +1,5 @@
-import 'package:meet_videosdk/data/models/signal_message.dart';
-import 'package:meet_videosdk/data/models/user.dart';
+import 'package:synq/data/models/signal_message.dart';
+import 'package:synq/data/models/user.dart';
 
 /// Pure reducer that folds presence signalling messages into the current list
 /// of online peers. Always excludes the local user and removes duplicates,

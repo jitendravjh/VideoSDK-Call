@@ -1,4 +1,4 @@
-import 'package:meet_videosdk/data/models/meeting_state.dart';
+import 'package:synq/data/models/meeting_state.dart';
 
 /// Pure helpers for meeting participant bookkeeping and the glare-free offer
 /// rule. Kept separate from `MeetingController` so the mesh logic is unit

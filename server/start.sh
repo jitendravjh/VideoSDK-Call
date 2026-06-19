@@ -17,7 +17,7 @@ trap cleanup EXIT INT TERM
 node index.js &
 SERVER_PID=$!
 
-cloudflared tunnel run videosdk-signal &
+cloudflared tunnel run &
 TUNNEL_PID=$!
 
 echo "server (pid $SERVER_PID) + tunnel (pid $TUNNEL_PID) running. Ctrl+C to stop."

@@ -1,5 +1,5 @@
 {
-  "name": "videosdk-signaling-server",
+  "name": "synq-signaling-server",
   "version": "1.0.0",
   "description": "Socket.IO signalling server for the real-time 1:1 WebRTC calling app",
   "type": "module",

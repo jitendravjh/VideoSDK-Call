@@ -1,5 +1,5 @@
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:meet_videosdk/data/models/ice_candidate_payload.dart';
+import 'package:synq/data/models/ice_candidate_payload.dart';
 
 /// A mesh of peer connections for a group meeting: one shared local capture
 /// fanned out to N independent peer connections, each with its own remote

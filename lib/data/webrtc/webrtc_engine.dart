@@ -1,6 +1,6 @@
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:meet_videosdk/data/models/chat_message.dart';
-import 'package:meet_videosdk/data/models/ice_candidate_payload.dart';
+import 'package:synq/data/models/chat_message.dart';
+import 'package:synq/data/models/ice_candidate_payload.dart';
 
 /// Abstraction over the WebRTC peer connection used by `CallController`.
 ///

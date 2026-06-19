@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meet_videosdk/application/meeting/meeting_reducer.dart';
-import 'package:meet_videosdk/data/models/meeting_state.dart';
+import 'package:synq/application/meeting/meeting_reducer.dart';
+import 'package:synq/data/models/meeting_state.dart';
 
 void main() {
   MeetingParticipant p(String id, {bool connected = false}) =>

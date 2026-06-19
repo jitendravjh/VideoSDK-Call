@@ -30,7 +30,7 @@ class AppConfig {
       _hostOverride.isNotEmpty || _urlOverride.isNotEmpty;
 
   /// The mDNS/DNS-SD service type the server advertises and the app browses for.
-  static const String discoveryServiceType = '_videosdk._tcp';
+  static const String discoveryServiceType = '_synq._tcp';
 
   /// Public signalling server, reachable over the internet, used when no LAN
   /// server is found via mDNS, so calls work across networks (incl. cellular).

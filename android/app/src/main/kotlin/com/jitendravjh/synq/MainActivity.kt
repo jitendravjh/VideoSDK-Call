@@ -1,4 +1,4 @@
-package com.example.meet_videosdk
+package com.jitendravjh.synq
 
 import android.media.AudioFormat
 import android.media.AudioRecord
@@ -18,7 +18,7 @@ import kotlin.math.sqrt
  * normalised 0..1 level to Dart.
  */
 class MainActivity : FlutterActivity() {
-    private val channelName = "videosdk/mic_level"
+    private val channelName = "synq/mic_level"
     private var meter: MicLevelMeter? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meet_videosdk/application/call/ring_action.dart';
-import 'package:meet_videosdk/data/models/call_state.dart';
-import 'package:meet_videosdk/data/models/user.dart';
+import 'package:synq/application/call/ring_action.dart';
+import 'package:synq/data/models/call_state.dart';
+import 'package:synq/data/models/user.dart';
 
 const _peer = User(userId: 'BOBBB2', displayName: 'Bob');
 

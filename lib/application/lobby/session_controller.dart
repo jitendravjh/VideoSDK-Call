@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:meet_videosdk/data/models/signal_message.dart';
-import 'package:meet_videosdk/data/models/user.dart';
-import 'package:meet_videosdk/data/session/session_store.dart';
-import 'package:meet_videosdk/data/signaling/signaling_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:synq/data/models/signal_message.dart';
+import 'package:synq/data/models/user.dart';
+import 'package:synq/data/session/session_store.dart';
+import 'package:synq/data/signaling/signaling_providers.dart';
 
 part 'session_controller.g.dart';
 

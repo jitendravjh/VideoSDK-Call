@@ -1,9 +1,9 @@
 import 'dart:convert';
 
-import 'package:meet_videosdk/data/models/call_record.dart';
-import 'package:meet_videosdk/data/session/session_store.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:synq/data/models/call_record.dart';
+import 'package:synq/data/session/session_store.dart';
 
 part 'call_history_store.g.dart';
 

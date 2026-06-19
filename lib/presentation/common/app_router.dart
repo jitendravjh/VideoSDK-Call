@@ -1,17 +1,17 @@
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
-import 'package:meet_videosdk/application/call/call_controller.dart';
-import 'package:meet_videosdk/application/lobby/session_controller.dart';
-import 'package:meet_videosdk/application/meeting/meeting_controller.dart';
-import 'package:meet_videosdk/data/models/call_state.dart';
-import 'package:meet_videosdk/data/models/meeting_state.dart';
-import 'package:meet_videosdk/data/models/user.dart';
-import 'package:meet_videosdk/presentation/call/call_screen.dart';
-import 'package:meet_videosdk/presentation/lobby/lobby_screen.dart';
-import 'package:meet_videosdk/presentation/lobby/sign_in_screen.dart';
-import 'package:meet_videosdk/presentation/meeting/meeting_screen.dart';
-import 'package:meet_videosdk/presentation/prejoin/prejoin_screen.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:synq/application/call/call_controller.dart';
+import 'package:synq/application/lobby/session_controller.dart';
+import 'package:synq/application/meeting/meeting_controller.dart';
+import 'package:synq/data/models/call_state.dart';
+import 'package:synq/data/models/meeting_state.dart';
+import 'package:synq/data/models/user.dart';
+import 'package:synq/presentation/call/call_screen.dart';
+import 'package:synq/presentation/lobby/lobby_screen.dart';
+import 'package:synq/presentation/lobby/sign_in_screen.dart';
+import 'package:synq/presentation/meeting/meeting_screen.dart';
+import 'package:synq/presentation/prejoin/prejoin_screen.dart';
 
 part 'app_router.g.dart';
 

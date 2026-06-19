@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:meet_videosdk/data/models/user.dart';
+import 'package:synq/data/models/user.dart';
 
 part 'call_state.freezed.dart';
 

@@ -100,7 +100,7 @@ const httpServer = http.createServer((req, res) => {
     return;
   }
   res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('VideoSDK signalling server');
+  res.end('Synq signalling server');
 });
 
 const io = new Server(httpServer, {
@@ -439,15 +439,22 @@ httpServer.listen(PORT, () => {
   try {
     const bonjour = new Bonjour();
     bonjour.publish({
-      name: 'VideoSDK Signalling',
-      type: 'videosdk',
+      name: 'Synq Signalling',
+      type: 'synq',
       port: Number(PORT),
+      // Advertise under our own host name, not the machine's. By default
+      // bonjour-service uses os.hostname(), which makes this responder claim the
+      // Mac's own ".local" name. macOS's built-in responder already owns that
+      // name, sees the conflict, and renames the Mac ("...-2", "-3", "-4"...) on
+      // every run. A dedicated host avoids that. The client reads the TXT ip, so
+      // this name is only a placeholder.
+      host: 'synq-signal.local',
       // Carry the IP in the TXT record. Some routers give the host a domain
       // suffix (e.g. ".bbrouter") whose hostname has no mDNS A record, so a
       // client resolving the SRV target gets no address. The TXT ip always works.
       txt: addresses.length > 0 ? { ip: addresses[0] } : undefined,
     });
-    console.log('  advertising via mDNS as _videosdk._tcp');
+    console.log('  advertising via mDNS as _synq._tcp');
   } catch (error) {
     console.warn('mDNS advertise failed (auto-discovery disabled):', error);
   }

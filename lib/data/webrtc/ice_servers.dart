@@ -1,4 +1,4 @@
-import 'package:meet_videosdk/core/constants.dart';
+import 'package:synq/core/constants.dart';
 
 /// Runtime ICE server configuration.
 ///

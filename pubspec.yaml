@@ -1,4 +1,4 @@
-name: meet_videosdk
+name: synq
 description: "Real-time 1:1 voice/video calling app over WebRTC with live presence and in-call chat."
 publish_to: 'none'
 version: 0.1.0+1

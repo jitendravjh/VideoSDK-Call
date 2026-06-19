@@ -1,5 +1,5 @@
-import 'package:meet_videosdk/data/models/chat_message.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:synq/data/models/chat_message.dart';
 
 part 'chat_controller.g.dart';
 

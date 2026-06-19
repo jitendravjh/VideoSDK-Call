@@ -1,7 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:meet_videosdk/data/models/chat_message.dart';
-import 'package:meet_videosdk/data/models/ice_candidate_payload.dart';
-import 'package:meet_videosdk/data/models/user.dart';
+import 'package:synq/data/models/chat_message.dart';
+import 'package:synq/data/models/ice_candidate_payload.dart';
+import 'package:synq/data/models/user.dart';
 
 part 'signal_message.freezed.dart';
 

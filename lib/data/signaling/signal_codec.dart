@@ -1,8 +1,8 @@
-import 'package:meet_videosdk/data/models/chat_message.dart';
-import 'package:meet_videosdk/data/models/ice_candidate_payload.dart';
-import 'package:meet_videosdk/data/models/signal_message.dart';
-import 'package:meet_videosdk/data/models/user.dart';
-import 'package:meet_videosdk/data/signaling/signal_events.dart';
+import 'package:synq/data/models/chat_message.dart';
+import 'package:synq/data/models/ice_candidate_payload.dart';
+import 'package:synq/data/models/signal_message.dart';
+import 'package:synq/data/models/user.dart';
+import 'package:synq/data/signaling/signal_events.dart';
 
 /// Translates between [SignalMessage] values and the (event name, payload)
 /// pairs that travel over Socket.IO.

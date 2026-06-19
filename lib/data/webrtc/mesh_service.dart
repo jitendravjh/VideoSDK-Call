@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:meet_videosdk/data/models/ice_candidate_payload.dart';
-import 'package:meet_videosdk/data/webrtc/data_channel_codec.dart';
-import 'package:meet_videosdk/data/webrtc/ice_servers.dart';
-import 'package:meet_videosdk/data/webrtc/mesh_engine.dart';
+import 'package:synq/data/models/ice_candidate_payload.dart';
+import 'package:synq/data/webrtc/data_channel_codec.dart';
+import 'package:synq/data/webrtc/ice_servers.dart';
+import 'package:synq/data/webrtc/mesh_engine.dart';
 
 /// One remote participant: its peer connection, remote renderer, data channel,
 /// and the ICE queued before the remote description is in place.

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meet_videosdk/application/lobby/presence_reducer.dart';
-import 'package:meet_videosdk/data/models/signal_message.dart';
-import 'package:meet_videosdk/data/models/user.dart';
+import 'package:synq/application/lobby/presence_reducer.dart';
+import 'package:synq/data/models/signal_message.dart';
+import 'package:synq/data/models/user.dart';
 
 void main() {
   const selfId = 'SELF01';

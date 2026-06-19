@@ -1,19 +1,19 @@
 import 'dart:async';
 
-import 'package:meet_videosdk/application/call/chat_controller.dart';
-import 'package:meet_videosdk/application/lobby/session_controller.dart';
-import 'package:meet_videosdk/application/meeting/meeting_reducer.dart';
-import 'package:meet_videosdk/core/call_code.dart';
-import 'package:meet_videosdk/core/logging.dart';
-import 'package:meet_videosdk/data/models/chat_message.dart';
-import 'package:meet_videosdk/data/models/meeting_state.dart';
-import 'package:meet_videosdk/data/models/signal_message.dart';
-import 'package:meet_videosdk/data/models/user.dart';
-import 'package:meet_videosdk/data/signaling/signaling_providers.dart';
-import 'package:meet_videosdk/data/signaling/signaling_transport.dart';
-import 'package:meet_videosdk/data/webrtc/mesh_engine.dart';
-import 'package:meet_videosdk/data/webrtc/webrtc_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:synq/application/call/chat_controller.dart';
+import 'package:synq/application/lobby/session_controller.dart';
+import 'package:synq/application/meeting/meeting_reducer.dart';
+import 'package:synq/core/call_code.dart';
+import 'package:synq/core/logging.dart';
+import 'package:synq/data/models/chat_message.dart';
+import 'package:synq/data/models/meeting_state.dart';
+import 'package:synq/data/models/signal_message.dart';
+import 'package:synq/data/models/user.dart';
+import 'package:synq/data/signaling/signaling_providers.dart';
+import 'package:synq/data/signaling/signaling_transport.dart';
+import 'package:synq/data/webrtc/mesh_engine.dart';
+import 'package:synq/data/webrtc/webrtc_providers.dart';
 import 'package:uuid/uuid.dart';
 
 part 'meeting_controller.g.dart';

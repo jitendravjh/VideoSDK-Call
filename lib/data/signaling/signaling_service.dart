@@ -1,15 +1,15 @@
 import 'dart:async';
 
-import 'package:meet_videosdk/core/constants.dart';
-import 'package:meet_videosdk/core/logging.dart';
-import 'package:meet_videosdk/data/discovery/server_discovery.dart';
-import 'package:meet_videosdk/data/models/signal_message.dart';
-import 'package:meet_videosdk/data/models/user.dart';
-import 'package:meet_videosdk/data/signaling/signal_codec.dart';
-import 'package:meet_videosdk/data/signaling/signal_events.dart';
-import 'package:meet_videosdk/data/signaling/signaling_transport.dart';
-import 'package:meet_videosdk/data/webrtc/ice_servers.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
+import 'package:synq/core/constants.dart';
+import 'package:synq/core/logging.dart';
+import 'package:synq/data/discovery/server_discovery.dart';
+import 'package:synq/data/models/signal_message.dart';
+import 'package:synq/data/models/user.dart';
+import 'package:synq/data/signaling/signal_codec.dart';
+import 'package:synq/data/signaling/signal_events.dart';
+import 'package:synq/data/signaling/signaling_transport.dart';
+import 'package:synq/data/webrtc/ice_servers.dart';
 
 /// Wraps the Socket.IO transport. Owns the socket, decodes inbound events into
 /// [SignalMessage]s, and re-registers the local user on every (re)connection.

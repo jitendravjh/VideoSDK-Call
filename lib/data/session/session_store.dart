@@ -1,6 +1,6 @@
-import 'package:meet_videosdk/data/models/user.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:synq/data/models/user.dart';
 
 part 'session_store.g.dart';
 

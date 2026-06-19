@@ -4,16 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:meet_videosdk/application/call/chat_controller.dart';
-import 'package:meet_videosdk/application/meeting/meeting_controller.dart';
-import 'package:meet_videosdk/core/call_code.dart';
-import 'package:meet_videosdk/core/permissions.dart';
-import 'package:meet_videosdk/data/models/meeting_state.dart';
-import 'package:meet_videosdk/data/webrtc/webrtc_providers.dart';
-import 'package:meet_videosdk/presentation/call/call_controls.dart';
-import 'package:meet_videosdk/presentation/call/chat_sheet.dart';
-import 'package:meet_videosdk/presentation/common/back_home_button.dart';
-import 'package:meet_videosdk/presentation/common/user_avatar.dart';
+import 'package:synq/application/call/chat_controller.dart';
+import 'package:synq/application/meeting/meeting_controller.dart';
+import 'package:synq/core/call_code.dart';
+import 'package:synq/core/permissions.dart';
+import 'package:synq/data/models/meeting_state.dart';
+import 'package:synq/data/webrtc/webrtc_providers.dart';
+import 'package:synq/presentation/call/call_controls.dart';
+import 'package:synq/presentation/call/chat_sheet.dart';
+import 'package:synq/presentation/common/back_home_button.dart';
+import 'package:synq/presentation/common/user_avatar.dart';
 
 /// The in-meeting screen: a grid of the local preview plus every participant,
 /// the shareable meeting code in the bar, and the call controls. Driven off

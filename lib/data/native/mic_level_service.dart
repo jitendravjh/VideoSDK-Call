@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:meet_videosdk/data/webrtc/webrtc_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:synq/data/webrtc/webrtc_providers.dart';
 
 part 'mic_level_service.g.dart';
 
@@ -10,7 +10,7 @@ part 'mic_level_service.g.dart';
 class MicLevelService {
   const MicLevelService();
 
-  static const EventChannel _channel = EventChannel('videosdk/mic_level');
+  static const EventChannel _channel = EventChannel('synq/mic_level');
 
   /// Android has a dedicated native amplitude meter (the platform-channel
   /// bonus). Other platforms derive the level from WebRTC audio stats instead.

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:meet_videosdk/data/models/chat_message.dart';
+import 'package:synq/data/models/chat_message.dart';
 
 /// Messages carried over the WebRTC data channel.
 sealed class DataChannelMessage {
